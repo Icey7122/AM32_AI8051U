@@ -1,0 +1,247 @@
+C251 COMPILER V5.04b,  phaseouts                                                           22/12/24  10:45:13  PAGE 1   
+
+
+C251 COMPILER V5.04b, COMPILATION OF MODULE phaseouts
+OBJECT MODULE PLACED IN .\Objects\phaseouts.obj
+COMPILER INVOKED BY: D:\Compiler\Keil_v5\C251\BIN\C251.EXE Mcu\8051u\Src\phaseouts.c XSMALL FUNCTIONS(REENTRANT) WARNING
+                    -LEVEL(3) OPTIMIZE(3,SPEED) BROWSE ORDER INCDIR(.\Inc;.\Mcu\8051u\Inc) INTVECTOR(0X1000) DEBUG PRINT(.\Objects\phaseouts.
+                    -lst) TABS(2) OBJECT(.\Objects\phaseouts.obj) 
+
+stmt  level    source
+
+    1          /*
+    2           * phaseout.c
+    3           *
+    4           *  Created on: 2024年12月1日
+    5           *      Author: 17263
+    6           */
+    7          #include "targets.h"
+    8          #include "peripherals.h"
+    9          #include "phaseouts.h"
+   10          #include "eeprom.h"
+   11          #include "commutate.h"
+   12          
+   13          STEP_FUNC_t* comStep[6] = {STEP_AB,STEP_CB,STEP_CA,STEP_BA,STEP_BC,STEP_AC};
+   14          
+   15          ///////////////////////////////////////////////PHASE A///////////////////////////////////////////////////
+             -/
+   16          void phaseAPWM(void) {
+   17   1        if (!COMP_PWM) {
+   18   2          PWMA_ENO &= ~0x02;
+   19   2          gpio_clear(PHASE_A_GPIO_PORT_LOW,PHASE_A_GPIO_LOW);
+   20   2        } else {
+   21   2          PWMA_ENO |= 0x02;
+   22   2        }
+   23   1        PWMA_ENO |= 0x01;
+   24   1      }
+   25          
+   26          void phaseAFLOAT(void) {
+   27   1        PWMA_ENO &= ~0x03;
+   28   1        gpio_clear(PHASE_A_GPIO_PORT_LOW,PHASE_A_GPIO_LOW);
+   29   1        gpio_clear(PHASE_A_GPIO_PORT_HIGH,PHASE_A_GPIO_HIGH);
+   30   1      }
+   31          
+   32          void phaseALOW(void) {
+   33   1        PWMA_ENO &= ~0x03;
+   34   1        gpio_set(PHASE_A_GPIO_PORT_LOW,PHASE_A_GPIO_LOW);
+   35   1        gpio_clear(PHASE_A_GPIO_PORT_HIGH,PHASE_A_GPIO_HIGH);
+   36   1      }
+   37          
+   38          
+   39          ///////////////////////////////////////////////PHASE B///////////////////////////////////////////////////
+             -/
+   40          void phaseBPWM(void) {
+   41   1        if (!COMP_PWM) { // for future
+   42   2          PWMA_ENO &= ~0x08;
+   43   2          gpio_clear(PHASE_B_GPIO_PORT_LOW,PHASE_B_GPIO_LOW);
+   44   2        } else {
+   45   2          PWMA_ENO |= 0x08;
+   46   2        }
+   47   1        PWMA_ENO |= 0x04;
+   48   1      }
+   49          
+   50          void phaseBFLOAT(void) {
+   51   1        PWMA_ENO &= ~0x0C;
+   52   1        gpio_clear(PHASE_B_GPIO_PORT_LOW,PHASE_B_GPIO_LOW);
+   53   1        gpio_clear(PHASE_B_GPIO_PORT_HIGH,PHASE_B_GPIO_HIGH);
+   54   1      }
+   55          
+C251 COMPILER V5.04b,  phaseouts                                                           22/12/24  10:45:13  PAGE 2   
+
+   56          void phaseBLOW(void) {
+   57   1        PWMA_ENO &= ~0x0C;
+   58   1        gpio_set(PHASE_B_GPIO_PORT_LOW,PHASE_B_GPIO_LOW);
+   59   1        gpio_clear(PHASE_B_GPIO_PORT_HIGH,PHASE_B_GPIO_HIGH);
+   60   1      }
+   61          
+   62          ///////////////////////////////////////////////PHASE C///////////////////////////////////////////////////
+             -/
+   63          
+   64          void phaseCPWM(void) {
+   65   1        if (!COMP_PWM) {
+   66   2          PWMA_ENO &= ~0x20;
+   67   2          gpio_clear(PHASE_C_GPIO_PORT_LOW,PHASE_C_GPIO_LOW);
+   68   2        } else {
+   69   2          PWMA_ENO |= 0x20;
+   70   2        }
+   71   1        PWMA_ENO |= 0x10;
+   72   1      }
+   73          
+   74          void phaseCFLOAT(void) {
+   75   1        PWMA_ENO &= ~0x30;
+   76   1        gpio_clear(PHASE_C_GPIO_PORT_LOW,PHASE_C_GPIO_LOW);
+   77   1        gpio_clear(PHASE_C_GPIO_PORT_HIGH,PHASE_C_GPIO_HIGH);
+   78   1      }
+   79          
+   80          void phaseCLOW(void) {
+   81   1        PWMA_ENO &= ~0x30;
+   82   1        gpio_set(PHASE_C_GPIO_PORT_LOW,PHASE_C_GPIO_LOW);
+   83   1        gpio_clear(PHASE_C_GPIO_PORT_HIGH,PHASE_C_GPIO_HIGH);
+   84   1      }
+   85          
+   86          ///////////////////////////////////////////////PHASE STEP////////////////////////////////////////////////
+             -////
+   87          
+   88          void STEP_AB(void)
+   89          {
+   90   1        phaseCFLOAT();
+   91   1        phaseBLOW();
+   92   1        phaseAPWM();
+   93   1      
+   94   1        CMPEXCFG = PHASE_C_COMP;
+   95   1      }
+   96          
+   97          
+   98          void STEP_CB(void)
+   99          {
+  100   1        phaseAFLOAT();
+  101   1        phaseBLOW();
+  102   1        phaseCPWM();
+  103   1      
+  104   1        CMPEXCFG = PHASE_A_COMP;
+  105   1      }
+  106          
+  107          
+  108          
+  109          void STEP_CA(void)
+  110          {
+  111   1        phaseBFLOAT();
+  112   1        phaseALOW();
+  113   1        phaseCPWM();
+  114   1      
+  115   1        CMPEXCFG = PHASE_B_COMP;
+  116   1      }
+  117          
+  118          
+  119          void STEP_BA(void)
+C251 COMPILER V5.04b,  phaseouts                                                           22/12/24  10:45:13  PAGE 3   
+
+  120          {
+  121   1        phaseCFLOAT();
+  122   1        phaseALOW();
+  123   1        phaseBPWM();
+  124   1      
+  125   1        CMPEXCFG = PHASE_C_COMP;
+  126   1      }
+  127          
+  128          
+  129          
+  130          void STEP_BC(void)
+  131          {
+  132   1        phaseAFLOAT();
+  133   1        phaseCLOW();
+  134   1        phaseBPWM();
+  135   1      
+  136   1        CMPEXCFG = PHASE_A_COMP;
+  137   1      }
+  138          
+  139          
+  140          
+  141          void STEP_AC(void)
+  142          {
+  143   1        phaseBFLOAT();
+  144   1        phaseCLOW();
+  145   1        phaseAPWM();
+  146   1      
+  147   1        CMPEXCFG = PHASE_B_COMP;
+  148   1      }
+  149          
+  150          
+  151          
+  152          void allOff(void) {
+  153   1        phaseAFLOAT();
+  154   1        phaseBFLOAT();
+  155   1        phaseCFLOAT();
+  156   1      }
+  157          
+  158          
+  159          
+  160          void fullBrake(void) { // full braking shorting all low sides
+  161   1        phaseALOW();
+  162   1        phaseBLOW();
+  163   1        phaseCLOW();
+  164   1      }
+  165          
+  166          
+  167          void allpwm(void) { // for stepper_sine
+  168   1        phaseAPWM();
+  169   1        phaseBPWM();
+  170   1        phaseCPWM();
+  171   1      }
+  172          
+  173          
+  174          void twoChannelForward(void) {
+  175   1        phaseAPWM();
+  176   1        phaseBLOW();
+  177   1        phaseCPWM();
+  178   1      }
+  179          
+  180          void twoChannelReverse(void) {
+  181   1        phaseALOW();
+  182   1        phaseBPWM();
+  183   1        phaseCLOW();
+  184   1      }
+  185          
+C251 COMPILER V5.04b,  phaseouts                                                           22/12/24  10:45:13  PAGE 4   
+
+  186          
+  187          void proportionalBrake(void) { // alternate all channels between braking (ABC LOW)
+  188   1      // and coasting (ABC float) put lower channel into
+  189   1      // alternate mode and turn upper OFF for each
+  190   1      // channel
+  191   1      // turn all HIGH channels off for ABC
+  192   1      
+  193   1        PWMA_ENO = 0x2A;
+  194   1        gpio_clear(PHASE_A_GPIO_PORT_HIGH,PHASE_A_GPIO_HIGH);
+  195   1        gpio_clear(PHASE_B_GPIO_PORT_HIGH,PHASE_B_GPIO_HIGH);
+  196   1        gpio_clear(PHASE_C_GPIO_PORT_HIGH,PHASE_C_GPIO_HIGH);
+  197   1      }
+  198          
+  199          
+  200          
+  201          
+  202          
+
+
+Module Information          Static   Overlayable
+------------------------------------------------
+  code size            =       509     ------
+  ecode size           =    ------     ------
+  data size            =    ------     ------
+  idata size           =    ------     ------
+  pdata size           =    ------     ------
+  xdata size           =    ------     ------
+  xdata-const size     =    ------     ------
+  edata size           =        12     ------
+  bit size             =    ------     ------
+  ebit size            =    ------     ------
+  bitaddressable size  =    ------     ------
+  ebitaddressable size =    ------     ------
+  far data size        =    ------     ------
+  huge data size       =    ------     ------
+  const size           =    ------     ------
+  hconst size          =        16     ------
+End of Module Information.
+
+
+C251 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

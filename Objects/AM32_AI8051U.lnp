@@ -1,0 +1,17 @@
+".\Objects\functions.obj",
+".\Objects\main.obj",
+".\Objects\servo.obj",
+".\Objects\sounds.obj",
+".\Objects\commutate.obj",
+".\Objects\eeprom.obj",
+".\Objects\input.obj",
+".\Objects\peripherals.obj",
+".\Objects\phaseouts.obj",
+".\Objects\stc8051u_it.obj",
+".\Mcu\8051u\Lib\AI8051U_32_MDU32.LIB",
+".\Mcu\8051u\Lib\AI8051U_32_TFPU.LIB" 
+TO ".\Objects\AM32_AI8051U" 
+PRINT(".\Objects\AM32_AI8051U.map") CASE 
+RESERVE (0xFF0003-0xFF1003)
+CLASSES (EDATA (0x0-0x7FF), 
+HDATA (0x0-0x7FF)) 

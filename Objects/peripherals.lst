@@ -1,0 +1,313 @@
+C251 COMPILER V5.04b,  peripherals                                                         22/12/24  10:45:13  PAGE 1   
+
+
+C251 COMPILER V5.04b, COMPILATION OF MODULE peripherals
+OBJECT MODULE PLACED IN .\Objects\peripherals.obj
+COMPILER INVOKED BY: D:\Compiler\Keil_v5\C251\BIN\C251.EXE Mcu\8051u\Src\peripherals.c XSMALL FUNCTIONS(REENTRANT) WARNI
+                    -NGLEVEL(3) OPTIMIZE(3,SPEED) BROWSE ORDER INCDIR(.\Inc;.\Mcu\8051u\Inc) INTVECTOR(0X1000) DEBUG PRINT(.\Objects\peripher
+                    -als.lst) TABS(2) OBJECT(.\Objects\peripherals.obj) 
+
+stmt  level    source
+
+    1          /*
+    2           * peripherals.c
+    3           *
+    4           *  Created on: 2024年12月2日
+    5           *      Author: 17263
+    6           */
+    7          #include "peripherals.h"
+    8          #include "targets.h"
+    9          
+   10          void initCorePeripherals(void) {
+   11   1      
+   12   1      //  initAfterJump();
+   13   1        configSystemClock();
+   14   1      
+   15   1        GPIO_Init();
+   16   1        CMP_Init();
+   17   1      
+   18   1        PWMA_Init();
+   19   1        TMR0_Init();
+   20   1        TMR1_Init();
+   21   1        TMR3_Init();
+   22   1        TMR4_Init();
+   23   1        TMR11_Init();
+   24   1        UN_PWMB_Init();
+   25   1      
+   26   1      #ifdef USE_SERIAL_TELEMETRY
+                 telem_UART_Init();
+               #endif
+   29   1      }
+   30          
+   31          void initAfterJump(void) {
+   32   1        CKCON = 0x00;
+   33   1        WTST = 0;
+   34   1        P_SW2 = 0x80;
+   35   1      
+   36   1        IAP_TPS = 40;
+   37   1        RSTFLAG |= 0x04;
+   38   1      }
+   39          
+   40          void configSystemClock(void){
+   41   1        __disable_irq();
+   42   1      
+   43   1        // IRCBAND |= 0x03;
+   44   1        // VRTRIM = 26;
+   45   1        // IRTRIM = 107;
+   46   1      
+   47   1        USBCLK |= (1 << 7);
+   48   1        USBCLK &= ~(3 << 5);
+   49   1        USBCLK |= (2 << 5);
+   50   1        _nop_();
+   51   1          _nop_();
+   52   1          _nop_();
+   53   1          _nop_();
+   54   1          _nop_();
+   55   1        CLKSEL |= (1 << 7);
+   56   1        CLKSEL |= (1 << 6);
+   57   1        MCLKOCR = 0x01;
+C251 COMPILER V5.04b,  peripherals                                                         22/12/24  10:45:13  PAGE 2   
+
+   58   1        IRC48MCR = 0x80;
+   59   1        while (!(IRC48MCR & 1))
+   60   1          ;
+   61   1        IRCBAND &= ~(3 << 6);
+   62   1        IRCBAND |= (2 << 6);
+   63   1        __enable_irq();
+   64   1      }
+   65          
+   66          void GPIO_Init(void) {
+   67   1        /* GPIO Ports Clock Enable */
+   68   1        gpio_mode_set(P0,GPIO_ModePin_All,GPIO_Mode_IN_REST);
+   69   1        gpio_mode_set(P1,GPIO_ModePin_All,GPIO_Mode_IN_REST);
+   70   1        gpio_mode_set(P2,GPIO_ModePin_All,GPIO_Mode_IN_REST);
+   71   1        gpio_mode_set(P3,GPIO_ModePin_All,GPIO_Mode_IN_REST);
+   72   1        gpio_mode_set(P4,GPIO_ModePin_All,GPIO_Mode_IN_REST);
+   73   1      
+   74   1        gpio_mode_set(P0,GPIO_ModePin_All,GPIO_Mode_Out_REST);
+   75   1        gpio_mode_set(P1,GPIO_ModePin_All,GPIO_Mode_Out_REST);
+   76   1        gpio_mode_set(P2,GPIO_ModePin_All,GPIO_Mode_Out_REST);
+   77   1        gpio_mode_set(P3,GPIO_ModePin_All,GPIO_Mode_Out_REST);
+   78   1        gpio_mode_set(P4,GPIO_ModePin_All,GPIO_Mode_Out_REST);
+   79   1      
+   80   1      }
+   81          
+   82          
+   83          void CMP_Init(void)
+   84          {
+   85   1        gpio_mode_set(P4,GPIO_ModePin_1,GPIO_Mode_Out_PP);
+   86   1        gpio_mode_set(P4,GPIO_ModePin_1,GPIO_Mode_Out_FAST);
+   87   1        gpio_mode_set(P4,GPIO_ModePin_4 | GPIO_ModePin_5 | GPIO_ModePin_6,GPIO_Mode_AIN);
+   88   1        gpio_mode_set(P5,GPIO_ModePin_1 | GPIO_ModePin_0 ,GPIO_Mode_AIN);
+   89   1      
+   90   1        CMPCR1 = 0;
+   91   1        NIE = PIE = 0;
+   92   1        CMPEN = CMPOE = 1;
+   93   1        CMPCR2 = 47;      //improtant
+   94   1        DISFLT = 0;
+   95   1          // CMPCR2 &= ~(DISFLT);
+   96   1      
+   97   1        CMPO_S = 1;
+   98   1        P4INTE |= 0x02;
+   99   1        P4IM1 =  0x00;
+  100   1        P4IM0 =  0x00;
+  101   1      
+  102   1        CMPEXCFG = 0x00;
+  103   1      
+  104   1        PINIPH = 0x10;
+  105   1        PINIPL = 0x10;
+  106   1      }
+  107          
+  108          void IWDG_Init(void) {
+  109   1        WDT_CONTR &= ~0x07;
+  110   1        WDT_CONTR |= 0x04;
+  111   1        IDL_WDT = 1;
+  112   1        EN_WDT = 1;
+  113   1        CLR_WDT = 1;
+  114   1      }
+  115          
+  116          void PWMA_Init(void)
+  117          {
+  118   1        gpio_mode_set(P0,GPIO_ModePin_0 | GPIO_ModePin_2 | GPIO_ModePin_4 ,GPIO_Mode_Out_PP);
+  119   1        gpio_mode_set(P0,GPIO_ModePin_1  | GPIO_ModePin_3 | GPIO_ModePin_5 ,GPIO_Mode_Out_PP);
+  120   1        gpio_mode_set(P0,GPIO_ModePin_0 | GPIO_ModePin_2 | GPIO_ModePin_4 ,GPIO_Mode_Out_FAST);
+  121   1        gpio_mode_set(P0,GPIO_ModePin_1  | GPIO_ModePin_3 | GPIO_ModePin_5 ,GPIO_Mode_Out_FAST);
+  122   1      
+  123   1        PWMA_PS = 0x55;
+C251 COMPILER V5.04b,  peripherals                                                         22/12/24  10:45:13  PAGE 3   
+
+  124   1        PWMA_ENO = 0x00;
+  125   1        PWMA_IOAUX = 0x00;
+  126   1        PWMA_OISR = 0x00;
+  127   1      
+  128   1        PWMA_ARRH    = PWM_AUTORELOAD >> 8;
+  129   1        PWMA_ARRL    = PWM_AUTORELOAD & 0xFF;
+  130   1      
+  131   1      
+  132   1        PWMA_CCMR1 = 0x68;
+  133   1        PWMA_CCER1 |= 0x05;
+  134   1      
+  135   1        PWMA_CCMR2 = 0x68;
+  136   1        PWMA_CCER1 |= 0x50;
+  137   1      
+  138   1        PWMA_CCMR3 = 0x68;
+  139   1        PWMA_CCER2 |= 0x05;
+  140   1      
+  141   1        PWMA_BKR    = 0x80 | 0x08;
+  142   1        PWMA_CR1  = 0x81; //| 0x20;
+  143   1        PWMA_EGR    = 0x01;
+  144   1        
+  145   1      }
+  146          
+  147          void TMR0_Init(void)
+  148          {
+  149   1        TM0PS = 19;
+  150   1        AUXR |= 0x80;
+  151   1        TMOD &= 0xF0;
+  152   1        TMOD |= 0x01;
+  153   1        TMR0_SET(0);
+  154   1        TF0 = 0;
+  155   1        TR0 = 1;
+  156   1        ET0 = 1;
+  157   1        PT0H = 1; PT0 = 1;
+  158   1      }
+  159          
+  160          void TMR1_Init(void) {
+  161   1        //非自动重装载模式
+  162   1        TM1PS = 19;     //设置定时器时钟预分频 ( 注意:并非所有系列都有此寄存器,详情请�
+             -�看数据手册 )
+  163   1        AUXR |= 0x40;     //定时器时钟1T模式
+  164   1        TMOD &= 0x0F;     //设置定时器模式
+  165   1        TMOD |= 0x10;     //设置定时器模式
+  166   1        TMR1_SET(0);
+  167   1        TF1 = 0;        //清除TF1标志
+  168   1        TR1 = 1;        //定时器1开始计时
+  169   1      }
+  170          
+  171          void TMR3_Init(void) {
+  172   1        //自动重装载模式
+  173   1        TM3PS = 39;     //设置定时器时钟预分频 ( 注意:并非所有系列都有此寄存器,详情请�
+             -�看数据手册 )
+  174   1        T4T3M |= 0x02;      //定时器时钟1T模式
+  175   1        TMR3_SET(0);
+  176   1        T4T3M |= 0x08;      //定时器3开始计时
+  177   1      }
+  178          
+  179          void TMR4_Init(void) {
+  180   1        //默认最低优先级
+  181   1        //自动重装载寄存器
+  182   1        TM4PS = 39;     //设置定时器时钟预分频 ( 注意:并非所有系列都有此寄存器,详情请�
+             -�看数据手册 )
+  183   1        T4T3M |= 0x20;      //定时器时钟1T模式
+  184   1        TMR4_RELOAD(1000000 / LOOP_FREQUENCY_HZ);
+  185   1        T4T3M |= 0x80;      //定时器4开始计时
+  186   1        IE2 |= 0x40;      //使能定时器4中断
+C251 COMPILER V5.04b,  peripherals                                                         22/12/24  10:45:13  PAGE 4   
+
+  187   1      
+  188   1      }
+  189          
+  190          void TMR11_Init(void) {
+  191   1        //非自动重装载模式
+  192   1        T11CR &= 0xf3;      //选择时钟源 (系统时钟SYSclk)
+  193   1        T11PS = 0xFF;       //设置定时器时钟预分频 ( 注意:并非所有系列都有此寄存器,详情�
+             -�查看数据手册 )
+  194   1        T11CR &= 0xEF;      //定时器时钟12T模式
+  195   1        TMR11_SET(0);
+  196   1        T11CR |= 0x80;      //定时器11开始计时
+  197   1        T11CR &= 0xfd;      //禁止定时器中断
+  198   1      }
+  199          
+  200          
+  201          void UN_PWMB_Init(void) {
+  202   1      
+  203   1        gpio_mode_set(P2,GPIO_ModePin_1,GPIO_Mode_IN_FLOATING);
+  204   1      
+  205   1        PWMB_PS = 0x02;
+  206   1        PWMB_PSCRH = 0x00;
+  207   1        PWMB_PSCRL = 0x00;
+  208   1        PWMB_BKR = 0xC0;
+  209   1        PWMB_CCER1 = 0x00;
+  210   1        // BWMA_SMCR = 0x40;
+  211   1        PWMB_CCMR1 = 0x01;
+  212   1        PWMB_CCER1 = 0x01;
+  213   1        PWMB_ARRH = 0xFF;
+  214   1        PWMB_ARRL = 0xFF;
+  215   1        PWMB_IER |= 0x02;
+  216   1        // BWMA_CCER1 = 0xDD;
+  217   1        // BWMA_CCER2 = 0xDD;
+  218   1      
+  219   1        PPWMBH = 1;PPWMB = 0;
+  220   1      
+  221   1        PWMB_EGR = 0x01;
+  222   1        PWMB_CR1 |= 0x01;
+  223   1      }
+  224          
+  225          void generatePwmTimerEvent(void)
+  226          { 
+  227   1        PWMA_EGR = 0x01;
+  228   1      }
+  229          
+  230          
+  231          void SET_PRESCALER_PWM(uint16_t presc)
+  232          { 
+  233   1        PWMA_PSCRH = presc >> 8; 
+  234   1        PWMA_PSCRL = presc;
+  235   1        PWMA_EGR = 0x01;
+  236   1      }         
+  237          
+  238          void SET_AUTO_RELOAD_PWM(uint16_t relval)
+  239          {
+  240   1        PWMA_ARRH = relval >> 8;
+  241   1        PWMA_ARRL = relval;
+  242   1      }
+  243          
+  244          void SET_DUTY_CYCLE_ALL(uint16_t newdc)
+  245          {
+  246   1        PWMA_CCR1H = PWMA_CCR2H = PWMA_CCR3H = newdc >> 8;
+  247   1        PWMA_CCR1L = PWMA_CCR2L = PWMA_CCR3L = newdc;
+  248   1      }
+  249          
+  250          void setPWMCompare1(uint16_t compareone)
+  251          {
+C251 COMPILER V5.04b,  peripherals                                                         22/12/24  10:45:13  PAGE 5   
+
+  252   1        PWMA_CCR1H = compareone >> 8;
+  253   1        PWMA_CCR1L = compareone;
+  254   1      }
+  255          
+  256          void setPWMCompare2(uint16_t comparetwo)
+  257          {
+  258   1        PWMA_CCR2H = comparetwo >> 8;
+  259   1        PWMA_CCR2L = comparetwo;
+  260   1      }
+  261          
+  262          void setPWMCompare3(uint16_t comparethree)
+  263          {
+  264   1        PWMA_CCR3H = comparethree >> 8;
+  265   1        PWMA_CCR3L = comparethree;
+  266   1      }
+
+
+Module Information          Static   Overlayable
+------------------------------------------------
+  code size            =      1712     ------
+  ecode size           =    ------     ------
+  data size            =    ------     ------
+  idata size           =    ------     ------
+  pdata size           =    ------     ------
+  xdata size           =    ------     ------
+  xdata-const size     =    ------     ------
+  edata size           =    ------     ------
+  bit size             =    ------     ------
+  ebit size            =    ------     ------
+  bitaddressable size  =    ------     ------
+  ebitaddressable size =    ------     ------
+  far data size        =    ------     ------
+  huge data size       =    ------     ------
+  const size           =    ------     ------
+  hconst size          =    ------     ------
+End of Module Information.
+
+
+C251 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

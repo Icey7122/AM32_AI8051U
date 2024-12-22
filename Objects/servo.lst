@@ -1,0 +1,131 @@
+C251 COMPILER V5.04b,  servo                                                               22/12/24  10:45:12  PAGE 1   
+
+
+C251 COMPILER V5.04b, COMPILATION OF MODULE servo
+OBJECT MODULE PLACED IN .\Objects\servo.obj
+COMPILER INVOKED BY: D:\Compiler\Keil_v5\C251\BIN\C251.EXE Src\servo.c XSMALL FUNCTIONS(REENTRANT) WARNINGLEVEL(3) OPTIM
+                    -IZE(3,SPEED) BROWSE ORDER INCDIR(.\Inc;.\Mcu\8051u\Inc) INTVECTOR(0X1000) DEBUG PRINT(.\Objects\servo.lst) TABS(2) OBJEC
+                    -T(.\Objects\servo.obj) 
+
+stmt  level    source
+
+    1          #include "main.h"
+    2          #include "eeprom.h"
+    3          #include "sounds.h"
+    4          #include "targets.h"
+    5          #include "servo.h"
+    6          
+    7          #include "functions.h"
+    8          #include "input.h"
+    9          
+   10          uint8_t calibration_required;         // calibration required
+   11          uint8_t high_calibration_set = 0;         // high calibration set
+   12          uint8_t enter_calibration_counter = 0;      // enter calibration count  
+   13          uint8_t high_calibration_counter = 0;       // high calibration counter
+   14          uint8_t low_calibration_counter = 0;      // low calibration counter
+   15          int16_t last_high_threshold = 0;        // last high threshold
+   16          int16_t servorawinput;          // raw servo input
+   17          int16_t max_servo_deviation = 250;  // max deviation between two servo pulses
+   18          
+   19          void computeServoInput(void) {
+   20   1        if (((dma_buffer[1] - dma_buffer[0]) > 800) && ((dma_buffer[1] - dma_buffer[0]) < 2200)) {
+   21   2          signaltimecounter = 0;
+   22   2          if (calibration_required) {
+   23   3            if (!high_calibration_set) {
+   24   4              if (high_calibration_counter == 0) {
+   25   5                last_high_threshold = dma_buffer[1] - dma_buffer[0];
+   26   5              }
+   27   4              high_calibration_counter++;
+   28   4              if (getAbsDif(last_high_threshold, servo_high_threshold) > 50) {
+   29   5                calibration_required = 0;
+   30   5              } else {
+   31   5                servo_high_threshold = ((7 * servo_high_threshold + (dma_buffer[1] - dma_buffer[0])) >> 3);
+   32   5                if (high_calibration_counter > 50) {
+   33   6                  servo_high_threshold = servo_high_threshold - 25;
+   34   6                  eepromBuffer[33] = (servo_high_threshold - 1750) / 2;
+   35   6                  high_calibration_set = 1;
+   36   6                  playDefaultTone();
+   37   6                }
+   38   5              }
+   39   4              last_high_threshold = servo_high_threshold;
+   40   4            }
+   41   3            if (high_calibration_set) {
+   42   4              if (dma_buffer[1] - dma_buffer[0] < 1250) {
+   43   5                low_calibration_counter++;
+   44   5                servo_low_threshold = ((7 * servo_low_threshold + (dma_buffer[1] - dma_buffer[0])) >> 3);
+   45   5              }
+   46   4              if (low_calibration_counter > 75) {
+   47   5                servo_low_threshold = servo_low_threshold + 25;
+   48   5                eepromBuffer[32] = (servo_low_threshold - 750) / 2;
+   49   5                calibration_required = 0;
+   50   5                saveEEpromSettings();
+   51   5                low_calibration_counter = 0;
+   52   5                playChangedTone();
+   53   5              }
+   54   4            }
+   55   3            signaltimecounter = 0;
+   56   3          } else {
+   57   3            if (BI_DIRECTION) {
+C251 COMPILER V5.04b,  servo                                                               22/12/24  10:45:12  PAGE 2   
+
+   58   4              if (dma_buffer[1] - dma_buffer[0] <= servo_neutral) {
+   59   5                servorawinput = map((dma_buffer[1] - dma_buffer[0]),servo_low_threshold, servo_neutral, 0, 1000);
+   60   5              } else {
+   61   5                servorawinput = map((dma_buffer[1] - dma_buffer[0]),servo_neutral + 1, servo_high_threshold, 1001,20
+             -00);
+   62   5              }
+   63   4            } else {
+   64   4              servorawinput = map((dma_buffer[1] - dma_buffer[0]),servo_low_threshold, servo_high_threshold, 47, 20
+             -47);
+   65   4              if (servorawinput <= 48) {
+   66   5                servorawinput = 0;
+   67   5              }
+   68   4            }
+   69   3            signaltimecounter = 0;
+   70   3          }
+   71   2        } else {
+   72   2          zero_input_counter = 0; // reset if out of range
+   73   2        }
+   74   1      
+   75   1        if (servorawinput - newinput > max_servo_deviation) {
+   76   2          newinput += max_servo_deviation;
+   77   2        } else if (newinput - servorawinput > max_servo_deviation) {
+   78   2          newinput -= max_servo_deviation;
+   79   2        } else {
+   80   2          newinput = servorawinput;
+   81   2        }
+   82   1      
+   83   1      }
+   84          
+   85          void checkServo(void) {
+   86   1        if (smallestnumber > 200 && smallestnumber < 20000) {
+   87   2          servoPwm = 1;
+   88   2          ic_timer_prescaler = CPU_FREQUENCY_MHZ - 1;
+   89   2          buffersize = 2;
+   90   2          inputSet = 1;
+   91   2        }
+   92   1      }
+
+
+Module Information          Static   Overlayable
+------------------------------------------------
+  code size            =       818     ------
+  ecode size           =    ------     ------
+  data size            =    ------     ------
+  idata size           =    ------     ------
+  pdata size           =    ------     ------
+  xdata size           =    ------     ------
+  xdata-const size     =    ------     ------
+  edata size           =        11     ------
+  bit size             =    ------     ------
+  ebit size            =    ------     ------
+  bitaddressable size  =    ------     ------
+  ebitaddressable size =    ------     ------
+  far data size        =    ------     ------
+  huge data size       =    ------     ------
+  const size           =    ------     ------
+  hconst size          =        32     ------
+End of Module Information.
+
+
+C251 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
