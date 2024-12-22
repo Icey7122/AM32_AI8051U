@@ -102,7 +102,9 @@ For detailed information, please refer to the [schematic diagram](docs/sch.pdf),
 
 The version I ported is V2.16, which supports signals such as dshot300, dshot600, and PWM.(But for some reason, I only implemented PWM, dshot can't be used).
 
-
+## Reference
+* [AM32](https://github.com/am32-firmware/AM32)
+* [RISC-V AM32](https://github.com/TianpeiLee/AM32)
 
 
 
