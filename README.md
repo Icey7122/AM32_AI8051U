@@ -97,6 +97,8 @@ For detailed information, please refer to the [schematic diagram](docs/sch.pdf),
 
     <img src="docs/image/para.png" alt="para" style="zoom:100%;" />
 
+## Hardware
+    The circuit design is located in docs: [pcb](https://github.com/Icey7122/AM32_AI8051U/docs), and the design is carried out using KiCAD, please note that the design is not particularly reasonable, please refer to it carefully.
 
 ## Test
 
