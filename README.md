@@ -37,13 +37,13 @@ In order to unify the interrupt entry of OPA, the outputs of OPA are merged into
 
 P30 and P31 are used to download bootloader  via STC-LINK1, UART or internal USB.<br>
 
-For detailed information, please refer to the [schematic diagram](docs/sch.pdf), **NOTE: The current firmware does not support current sampling and adc sampling.**
+For detailed information, please refer to the [schematic diagram](docs/sch.pdf), **NOTE: The current firmware does not support current sampling and voltage sampling.**
 
 
 ## Config
 
 ### Flashing BootLoader
-1. For empty chips, BootLoader needs to be flashed via STC-LINK1, USB or internal USB, Connect according to the diagram below.
+1. For empty chips, BootLoader needs to be flashed via STC-LINK1, UART or internal USB, Connect according to the diagram below.
 
 
    <img src="docs/image/connect.jpeg" alt="connect" style="zoom:55%;" />
@@ -97,7 +97,7 @@ For detailed information, please refer to the [schematic diagram](docs/sch.pdf),
 
     <img src="docs/image/para.png" alt="para" style="zoom:100%;" />
 
-## Hardware
+## Hardware design
 The circuit design is located in docs: [pcb](https://github.com/Icey7122/AM32_AI8051U/tree/main/docs), and the design is carried out using KiCAD, please note that the design is not particularly reasonable, please refer to it carefully.
     
 
