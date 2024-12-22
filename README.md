@@ -103,20 +103,6 @@ For detailed information, please refer to the [schematic diagram](docs/sch.pdf),
 The version I ported is V2.16, which supports signals such as dshot300, dshot600, and PWM.(But for some reason, I only implemented PWM, dshot can't be used).
 
 
-<img src="docs/image/test.jpg" alt="test" style="zoom:55%;" /> <br>
-
-
-### ESC Test
-This video demonstrates the running of ESC under different signal input conditions.<br>
-[<img src="docs/image/vedio1.jpg" alt="vedio1" style="zoom:72%;" />](https://youtu.be/h0iekUh7lSY)
-
-
-
-### Output signal of servo testing tool
-This video demonstrates three different output signals of a servo testing tool.<br>
-[<img src="docs/image/vedio2.jpg" alt="vedio2" style="zoom:54%;" />](https://youtu.be/FwIuJzSEXmE)
-
-
 
 
 
