@@ -269,7 +269,6 @@ void main(void)
 
 	loadEEpromSettings();
 
-	gpio_mode_set(P2,GPIO_ModePin_0,GPIO_Mode_IPU);
 
 	if (VERSION_MAJOR != eepromBuffer[3] || VERSION_MINOR != eepromBuffer[4]) {
 		eepromBuffer[3] = VERSION_MAJOR;

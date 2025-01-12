@@ -128,6 +128,7 @@ void PWMA_Init(void)
 	PWMA_ARRH    = PWM_AUTORELOAD >> 8;
 	PWMA_ARRL    = PWM_AUTORELOAD & 0xFF;
 
+	PWMA_DTR = DEAD_TIME;
 
 	PWMA_CCMR1 = 0x68;
 	PWMA_CCER1 |= 0x05;
@@ -200,9 +201,9 @@ void TMR11_Init(void) {
 
 void UN_PWMB_Init(void) {
 
-	gpio_mode_set(P2,GPIO_ModePin_1,GPIO_Mode_IN_FLOATING);
-
-	PWMB_PS = 0x02;
+	gpio_mode_set(INPUT_PIN_PORT,INPUT_MODE_PIN,GPIO_Mode_IN_FLOATING);
+	
+	PWMB_PS = INPUT_PS;
 	PWMB_PSCRH = 0x00;
 	PWMB_PSCRL = 0x00;
 	PWMB_BKR = 0xC0;

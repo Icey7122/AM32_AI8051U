@@ -17,8 +17,8 @@
 
 #define FILE_NAME 					"AM32REF_8051U"
 #define FIRMWARE_NAME 				"AM32 Ref-ESC"
-#define DEAD_TIME 					20
-#define HARDWARE_GROUP_A
+#define DEAD_TIME 					30
+#define HARDWARE_GROUP_P11
 #define MILLIVOLT_PER_AMP 			65
 #define CURRENT_OFFSET 				0
 #define TARGET_VOLTAGE_DIVIDER 		110
@@ -68,12 +68,31 @@
 #define RAMP_SPEED_HIGH_RPM 16
 #endif
 
-#ifdef HARDWARE_GROUP_A
-
+#ifdef HARDWARE_GROUP_P01
 #define MCU_8051U
+#define INPUT_PS 					0x00
+#define INPUT_PIN 					P01
+#define INPUT_PIN_PORT 				P0
+#define INPUT_MODE_PIN				GPIO_ModePin_1
+#elif defined(HARDWARE_GROUP_P11)
+#define MCU_8051U
+#define INPUT_PS 					0x01
+#define INPUT_PIN 					P11
+#define INPUT_PIN_PORT 				P1
+#define INPUT_MODE_PIN				GPIO_ModePin_1
+#elif defined(HARDWARE_GROUP_P21)
+#define MCU_8051U
+#define INPUT_PS 					0x02
 #define INPUT_PIN 					P21
 #define INPUT_PIN_PORT 				P2
 #define INPUT_MODE_PIN				GPIO_ModePin_1
+#elif defined(HARDWARE_GROUP_P50)
+#define MCU_8051U
+#define INPUT_PS 					0x03
+#define INPUT_PIN 					P50
+#define INPUT_PIN_PORT 				P5
+#define INPUT_MODE_PIN				GPIO_ModePin_0
+#endif
 
 #define PHASE_A_GPIO_HIGH 			P00
 #define PHASE_A_GPIO_PORT_HIGH 		P0
@@ -100,8 +119,6 @@
 #define PHASE_B_COMP COMP_P51
 #define PHASE_C_COMP COMP_P50
 
-#endif
-
 #ifdef MCU_8051U
 
 #define CPU_FREQUENCY_MHZ 			40
@@ -109,10 +126,10 @@
 #define EEPROM_START_ADD 			(uint32_t)0xFFF800
 #define PWM_CLOCK_MHZ 				CPU_FREQUENCY_MHZ
 
-#define CMP_IRQHandler(val)				CMP_ISR(val) interrupt P4INT_VECTOR using 3
-#define TWENTY_KHZ_IRQHandler(val)		TMR4_ISR(val) interrupt TMR4_VECTOR using 1
-#define COM_TIMER_IRQHandler(val)		TMR0_ISR(val) interrupt TMR0_VECTOR using 3
-#define IC_IRQHandler(val)				PWMB_ISR(val) interrupt PWMB_VECTOR	using 2	
+#define CMP_IRQHandler(val)				CMP_ISR(val) interrupt P4INT_VECTOR using 2
+#define TWENTY_KHZ_IRQHandler(val)		TMR4_ISR(val) interrupt TMR4_VECTOR
+#define COM_TIMER_IRQHandler(val)		TMR0_ISR(val) interrupt TMR0_VECTOR using 1
+#define IC_IRQHandler(val)				PWMB_ISR(val) interrupt PWMB_VECTOR	using 3	
 
 
 #define PWM_FREQUNCY_HZ				24000
