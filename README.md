@@ -98,14 +98,17 @@ For detailed information, please refer to the [schematic diagram](docs/sch.pdf),
     <img src="docs/image/para.png" alt="para" style="zoom:100%;" />
 
 ## Hardware design
-The circuit design is located in docs: [pcb](https://github.com/Icey7122/AM32_AI8051U/tree/main/docs), and the design is carried out using KiCAD, please note that the design is not particularly reasonable, please refer to it carefully.
-    
+The circuit design is located in docs: [pcb](https://github.com/Icey7122/AM32_AI8051U/tree/main/docs), and the design is carried out using KiCAD, please note that the design is not particularly reasonable, please refer to it carefully.(Now I redesign the PCB on LCEDA, and the new PCB project also in docs folder.)
+
+   New design:
+   <img src="docs/image/new_df.jpg" alt="new_f" style="zoom:100%;" />
+   <img src="docs/image/new_db.jpg" alt="new_b" style="zoom:100%;" />
 
 ## Test
 
 The version I ported is V2.16, which supports signals such as dshot300, dshot600, and PWM.(But for some reason, I only implemented PWM, dshot can't be used).
-* [Test Video](https://www.bilibili.com/video/BV1eZkvYuEUj)
-
+* [Test Video(old PCB)](https://www.bilibili.com/video/BV1eZkvYuEUj)
+* [Test Video(new PCB)](https://www.bilibili.com/video/BV1Huc3e8Egv)
 ## Reference
 * [AM32](https://github.com/am32-firmware/AM32)
 * [RISC-V AM32](https://github.com/TianpeiLee/AM32)
