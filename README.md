@@ -37,7 +37,7 @@ In order to unify the interrupt entry of OPA, the outputs of OPA are merged into
 
 P30 and P31 are used to download bootloader  via STC-LINK1, UART or internal USB.<br>
 
-For detailed information, please refer to the [schematic diagram](docs/sch.pdf), **NOTE: The current firmware does not support current sampling and voltage sampling.**
+For detailed information, please refer to the [schematic diagram](docs/sch.pdf).
 
 
 ## Config
