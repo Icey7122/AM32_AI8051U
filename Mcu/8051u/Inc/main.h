@@ -9,9 +9,9 @@ extern uint8_t use_speed_control_loop;
 extern uint32_t MINIMUM_RPM_SPEED_CONTROL;
 extern uint32_t MAXIMUM_RPM_SPEED_CONTROL;
 
-extern fastPID xdata speedPid;
-extern fastPID xdata currentPid;
-extern fastPID xdata stallPid;
+extern fastPID speedPid;
+extern fastPID currentPid;
+extern fastPID stallPid;
 
 extern uint8_t  armed;
 extern uint8_t  running;
@@ -23,8 +23,8 @@ extern uint32_t target_e_com_time;
 
 extern uint8_t cell_counter;
 extern uint16_t battery_voltage; 		
-extern uint16_t actual_current;
-extern uint16_t current_limit_adjust;
+extern int16_t actual_current;
+extern int16_t current_limit_adjust;
 extern uint8_t degrees_celsius;
 
 extern float stall_protection_adjust;

@@ -5,7 +5,10 @@
  *      Author: 17263
  */
 #include "peripherals.h"
+#include "serial_telemetry.h"
 #include "targets.h"
+#include "functions.h"
+#include "adc.h"
 
 void initCorePeripherals(void) {
 
@@ -22,9 +25,10 @@ void initCorePeripherals(void) {
 	TMR4_Init();
 	TMR11_Init();
 	UN_PWMB_Init();
+	ADC_Init();
 
 #ifdef USE_SERIAL_TELEMETRY
-	telem_UART_Init();
+	telem_UART1_Init();
 #endif
 }
 
@@ -60,6 +64,7 @@ void configSystemClock(void){
 		;
 	IRCBAND &= ~(3 << 6);
 	IRCBAND |= (2 << 6);
+	DMAIR = 0x3F; 		//TPU时钟 120M
 	__enable_irq();
 }
 
@@ -90,7 +95,7 @@ void CMP_Init(void)
 	CMPCR1 = 0;
 	NIE = PIE = 0;
 	CMPEN = CMPOE = 1;
-	CMPCR2 = 47;			//improtant
+	CMPCR2 = 48;			//improtant
 	DISFLT = 0;
     // CMPCR2 &= ~(DISFLT);
 
@@ -145,84 +150,6 @@ void PWMA_Init(void)
 	
 }
 
-void TMR0_Init(void)
-{
-	TM0PS = 19;
-	AUXR |= 0x80;
-	TMOD &= 0xF0;
-	TMOD |= 0x01;
-	TMR0_SET(0);
-	TF0 = 0;
-	TR0 = 1;
-	ET0 = 1;
-	PT0H = 1; PT0 = 1;
-}
-
-void TMR1_Init(void) {
-	//非自动重装载模式
-	TM1PS = 19;			//设置定时器时钟预分频 ( 注意:并非所有系列都有此寄存器,详情请查看数据手册 )
-	AUXR |= 0x40;			//定时器时钟1T模式
-	TMOD &= 0x0F;			//设置定时器模式
-	TMOD |= 0x10;			//设置定时器模式
-	TMR1_SET(0);
-	TF1 = 0;				//清除TF1标志
-	TR1 = 1;				//定时器1开始计时
-}
-
-void TMR3_Init(void) {
-	//自动重装载模式
-	TM3PS = 39;			//设置定时器时钟预分频 ( 注意:并非所有系列都有此寄存器,详情请查看数据手册 )
-	T4T3M |= 0x02;			//定时器时钟1T模式
-	TMR3_SET(0);
-	T4T3M |= 0x08;			//定时器3开始计时
-}
-
-void TMR4_Init(void) {
-	//默认最低优先级
-	//自动重装载寄存器
-	TM4PS = 39;			//设置定时器时钟预分频 ( 注意:并非所有系列都有此寄存器,详情请查看数据手册 )
-	T4T3M |= 0x20;			//定时器时钟1T模式
-	TMR4_RELOAD(1000000 / LOOP_FREQUENCY_HZ);
-	T4T3M |= 0x80;			//定时器4开始计时
-	IE2 |= 0x40;			//使能定时器4中断
-
-}
-
-void TMR11_Init(void) {
-	//非自动重装载模式
-	T11CR &= 0xf3;			//选择时钟源 (系统时钟SYSclk)
-	T11PS = 0xFF;				//设置定时器时钟预分频 ( 注意:并非所有系列都有此寄存器,详情请查看数据手册 )
-	T11CR &= 0xEF;			//定时器时钟12T模式
-	TMR11_SET(0);
-	T11CR |= 0x80;			//定时器11开始计时
-	T11CR &= 0xfd;			//禁止定时器中断
-}
-
-
-void UN_PWMB_Init(void) {
-
-	gpio_mode_set(INPUT_PIN_PORT,INPUT_MODE_PIN,GPIO_Mode_IN_FLOATING);
-	
-	PWMB_PS = INPUT_PS;
-	PWMB_PSCRH = 0x00;
-	PWMB_PSCRL = 0x00;
-	PWMB_BKR = 0xC0;
-	PWMB_CCER1 = 0x00;
-	// BWMA_SMCR = 0x40;
-	PWMB_CCMR1 = 0x01;
-	PWMB_CCER1 = 0x01;
-	PWMB_ARRH = 0xFF;
-	PWMB_ARRL = 0xFF;
-	PWMB_IER |= 0x02;
-	// BWMA_CCER1 = 0xDD;
-	// BWMA_CCER2 = 0xDD;
-
-	PPWMBH = 1;PPWMB = 0;
-
-	PWMB_EGR = 0x01;
-	PWMB_CR1 |= 0x01;
-}
-
 void generatePwmTimerEvent(void)
 {	
 	PWMA_EGR = 0x01;
@@ -264,4 +191,122 @@ void setPWMCompare3(uint16_t comparethree)
 {
 	PWMA_CCR3H = comparethree >> 8;
 	PWMA_CCR3L = comparethree;
+}
+
+void TMR0_Init(void)
+{
+	TM0PS = CPU_FREQUENCY_MHZ / 2 - 1;
+	AUXR |= 0x80;
+	TMOD &= 0xF0;
+	TMOD |= 0x01;
+	TMR0_SET(0);
+	TF0 = 0;
+	TR0 = 1;
+	ET0 = 1;
+	PT0H = 1; PT0 = 1;
+}
+
+void TMR1_Init(void) {
+	//非自动重装载模式
+	TM1PS = CPU_FREQUENCY_MHZ / 2 - 1;			//设置定时器时钟预分频 ( 注意:并非所有系列都有此寄存器,详情请查看数据手册 )
+	AUXR |= 0x40;			//定时器时钟1T模式
+	TMOD &= 0x0F;			//设置定时器模式
+	TMOD |= 0x10;			//设置定时器模式
+	TMR1_SET(0);
+	TF1 = 0;				//清除TF1标志
+	TR1 = 1;				//定时器1开始计时
+}
+
+void TMR3_Init(void) {
+	//自动重装载模式
+	TM3PS = CPU_FREQUENCY_MHZ - 1;			//设置定时器时钟预分频 ( 注意:并非所有系列都有此寄存器,详情请查看数据手册 )
+	T4T3M |= 0x02;			//定时器时钟1T模式
+	TMR3_SET(0);
+	T4T3M |= 0x08;			//定时器3开始计时
+}
+
+void TMR4_Init(void) {
+	//默认最低优先级
+	//自动重装载寄存器
+	TM4PS = CPU_FREQUENCY_MHZ - 1;			//设置定时器时钟预分频 ( 注意:并非所有系列都有此寄存器,详情请查看数据手册 )
+	T4T3M |= 0x20;			//定时器时钟1T模式
+	TMR4_RELOAD(1000000 / LOOP_FREQUENCY_HZ);
+	T4T3M |= 0x80;			//定时器4开始计时
+	IE2 |= 0x40;			//使能定时器4中断
+
+}
+
+void TMR11_Init(void) {
+	//非自动重装载模式
+	T11CR &= 0xf3;			//选择时钟源 (系统时钟SYSclk)
+	T11PS = 0xFF;				//设置定时器时钟预分频 ( 注意:并非所有系列都有此寄存器,详情请查看数据手册 )
+	T11CR &= 0xEF;			//定时器时钟12T模式
+	TMR11_SET(0);
+	T11CR |= 0x80;			//定时器11开始计时
+	T11CR &= 0xfd;			//禁止定时器中断
+}
+
+
+void UN_PWMB_Init(void) {
+
+	gpio_mode_set(INPUT_PIN_PORT,INPUT_MODE_PIN,GPIO_Mode_IN_FLOATING);
+	
+	PWMB_PS = INPUT_PS;
+	PWMB_PSCRH = 0x00;
+	PWMB_PSCRL = 0x00;
+	PWMB_BKR = 0xC0;
+	PWMB_CCER1 = 0x00;
+
+	PWMB_CCMR1 = 0x01;
+	PWMB_CCER1 = 0x01;
+	PWMB_ARRH = 0xFF;
+	PWMB_ARRL = 0xFF;
+	PWMB_IER |= 0x02;
+
+
+	PPWMBH = 1;PPWMB = 0;
+
+	PWMB_EGR = 0x01;
+	PWMB_CR1 |= 0x01;
+}
+
+void ADC_Init(void) {
+
+	gpio_mode_set(P1,GPIO_ModePin_6 | GPIO_ModePin_7,GPIO_Mode_AIN);
+
+	ADC_POWER = 1;            //ADC POWER ON
+	delayMillis(5);           //ADC POWER-UP DELAY
+	RESFMT = 1;               //RESFMT(1):RIGHT-JUSTIFIED
+
+	ADCCFG &= ~0x0f;		//SPEED(0)
+	ADCTIM = 0x38;			//CSSETUP(0), CSHOLD(1), SMPDUTY(24)
+
+	DMA_ADC_RXAH = (uint16_t)adc_dma_buffer >> 8;
+	DMA_ADC_RXAL = (uint16_t)adc_dma_buffer & 0xFF;    //DMA_ADC BUFFER ADDRESS
+
+	DMA_ADC_CFG2 = 0x0D;	//DMA_ADC Transfer 64 times
+
+	DMA_ADC_CHSW0 = VOLTAGE_ADC_CHANNEL | CURRENT_ADC_CHANNEL;	//CH7 CH6
+	DMA_ADC_CHSW1 = 0x00; 
+
+	DMA_ADC_AMT = 0x00;
+	DMA_ADC_AMTH = 0x00;    //设置ADC转换1次
+
+	DMA_ADC_ITVH = 0x00;
+	DMA_ADC_ITVL = 0x00;    //设置ADC速度
+
+	DMA_ADC_CFG = 0x80;       //DMA INTERRUPT ENABLE
+
+	DMA_ADC_CR = 0x80;      //DMA_ADC ENABLE
+
+}
+
+#include "stdio.h"
+#pragma FUNCTIONS (static)
+char putchar(char c)
+{
+	SBUF = c;
+	while (!TI);
+	TI = 0;
+	return c;
 }

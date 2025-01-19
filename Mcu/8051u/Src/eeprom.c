@@ -11,7 +11,7 @@
 #include "string.h"
 #include "functions.h"
 
-#define page_size 0x200                   // 512 bytes for STC8051U
+#define page_size 512                   // 512 bytes for STC8051U
 
 uint32_t eeprom_address = EEPROM_START_ADD;
 uint8_t xdata eepromBuffer[176] = { 0 };
@@ -62,8 +62,8 @@ uint8_t eeprom_layout_version = 2;
 uint8_t play_tone_flag;
 
 
-bool save_flash_nolib(const uint8_t *dat, uint32_t length, uint32_t add) {
-	static uint32_t xdata i;
+bool save_flash_nolib(uint8_t *dat, uint32_t length, uint32_t add) {
+	static uint32_t i;
 
 	IAP_ENABLE();
 	// unlock flash
@@ -111,11 +111,11 @@ bool save_flash_nolib(const uint8_t *dat, uint32_t length, uint32_t add) {
 
 	IAP_DISABLE();                      //关闭IAP
 
-	return memcmp(dat, (uint8_t *)add, length) == 0;
+	return memcmp(dat, (uint8_t volatile far*)add, length) == 0;
 }
 
 void read_flash_bin(uint8_t *dat, uint32_t add, uint32_t out_buff_len) {
-	memcpy(dat, (uint8_t *)add, out_buff_len);
+	memcpy(dat, (uint8_t volatile far*)add, out_buff_len);
 }
 
 

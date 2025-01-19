@@ -14,7 +14,7 @@ uint8_t ic_timer_prescaler = 0;
 // uint8_t out_put = 0;
 
 //detectInput
-int32_t xdata dma_buffer[64] = { 0 };
+uint16_t xdata dma_buffer[64] = { 0 };
 uint8_t buffersize = 32;
 uint16_t smallestnumber = 20000;
 uint16_t average_signal_pulse;
@@ -120,8 +120,9 @@ void transfercomplete(void) {
 }
 
 void detectInput(void) {
-	uint16_t j;
-	uint32_t lastnumber = dma_buffer[0];
+	static uint16_t j;
+	static uint32_t lastnumber;
+	lastnumber = dma_buffer[0];
 	smallestnumber = 20000;
 	average_signal_pulse = 0;
 	for (j = 1; j < 31; j++) {

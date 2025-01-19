@@ -8,7 +8,7 @@ extern uint8_t servoPwm;
 extern uint8_t dshot;
 extern uint8_t ic_timer_prescaler;
 
-extern int32_t xdata dma_buffer[64];
+extern uint16_t xdata dma_buffer[64];
 extern uint8_t buffersize;
 extern uint16_t smallestnumber;
 extern uint16_t average_signal_pulse;

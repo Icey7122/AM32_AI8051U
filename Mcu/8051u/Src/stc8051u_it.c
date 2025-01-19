@@ -7,11 +7,12 @@
 #include "input.h"
 #include "main.h"
 #include "stc8051u_it.h"
-
+#include "adc.h"
 #include "functions.h"
 #include "phaseouts.h"
 #include "commutate.h"
 #include "peripherals.h"
+#include "serial_telemetry.h"
 
 uint8_t interrupt_time = 0;
 
@@ -47,5 +48,17 @@ void IC_IRQHandler(void)
 		input_ready = 1;
         interrupt_time = 0;
     }
+}
+
+
+void ADC_DMA_IRQHandler(void)
+{
+	ADC_DMA_Callback();
+	DMA_ADC_STA = 0x00;
+}
+
+void UART1_DMA_IRQHandler(void)
+{
+	DMA_UR1T_STA = 0x00;
 }
 

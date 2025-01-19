@@ -262,7 +262,7 @@
             <uAlias>1</uAlias>
             <uRentF>1</uRentF>
             <uUch>0</uUch>
-            <uFlt64>0</uFlt64>
+            <uFlt64>1</uFlt64>
             <Fuzzy>3</Fuzzy>
             <Optim>7</Optim>
             <wLevel>3</wLevel>
@@ -344,6 +344,11 @@
               <FileType>1</FileType>
               <FilePath>.\Src\sounds.c</FilePath>
             </File>
+            <File>
+              <FileName>serial_telemetry.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\serial_telemetry.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -379,6 +384,21 @@
               <FileType>1</FileType>
               <FilePath>.\Mcu\8051u\Src\stc8051u_it.c</FilePath>
             </File>
+            <File>
+              <FileName>mcu.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Mcu\8051u\Src\mcu.c</FilePath>
+            </File>
+            <File>
+              <FileName>adc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Mcu\8051u\Src\adc.c</FilePath>
+            </File>
+            <File>
+              <FileName>uart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Mcu\8051u\Src\uart.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -402,7 +422,7 @@
                   <PublicsOnly>2</PublicsOnly>
                   <StopOnExitCode>11</StopOnExitCode>
                   <CustomArgument></CustomArgument>
-                  <IncludeLibraryModules></IncludeLibraryModules>
+                  <IncludeLibraryModules>AI8051U_32_MDU32</IncludeLibraryModules>
                   <ComprImg>1</ComprImg>
                   <BankNo>65535</BankNo>
                 </CommonProperty>
@@ -427,7 +447,7 @@
                   <PublicsOnly>2</PublicsOnly>
                   <StopOnExitCode>11</StopOnExitCode>
                   <CustomArgument></CustomArgument>
-                  <IncludeLibraryModules></IncludeLibraryModules>
+                  <IncludeLibraryModules>AI8051U_32_TFPU</IncludeLibraryModules>
                   <ComprImg>1</ComprImg>
                   <BankNo>65535</BankNo>
                 </CommonProperty>

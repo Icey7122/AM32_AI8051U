@@ -72,7 +72,7 @@ extern uint8_t eeprom_layout_version;
 
 extern uint8_t play_tone_flag;
 
-bool save_flash_nolib(const uint8_t *dat, uint32_t length, uint32_t add);
+bool save_flash_nolib(uint8_t *dat, uint32_t length, uint32_t add);
 void read_flash_bin(uint8_t *dat, uint32_t add, uint32_t out_buff_len);
 void loadEEpromSettings(void);
 void saveEEpromSettings(void);

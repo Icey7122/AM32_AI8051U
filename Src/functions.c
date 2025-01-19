@@ -20,28 +20,27 @@ int32_t map(int32_t x, int32_t in_min, int32_t in_max, int32_t out_min, int32_t 
 
 float doPidCalculations(struct fastPID *pidnow, int actual, int target) {
 
-	pidnow->error = actual - target;
-	pidnow->integral = pidnow->integral + pidnow->error * pidnow->Ki;
-	if (pidnow->integral > pidnow->integral_limit) {
-		pidnow->integral = pidnow->integral_limit;
-	}
-	if (pidnow->integral < -pidnow->integral_limit) {
-		pidnow->integral = -pidnow->integral_limit;
-	}
+    pidnow->error = actual - target;
+    pidnow->integral = pidnow->integral + pidnow->error * pidnow->Ki;
+    if (pidnow->integral > pidnow->integral_limit) {
+        pidnow->integral = pidnow->integral_limit;
+    }
+    if (pidnow->integral < -pidnow->integral_limit) {
+        pidnow->integral = -pidnow->integral_limit;
+    }
 
-	pidnow->derivative = pidnow->Kd * (pidnow->error - pidnow->last_error);
-	pidnow->last_error = pidnow->error;
+    pidnow->derivative = pidnow->Kd * (pidnow->error - pidnow->last_error);
+    pidnow->last_error = pidnow->error;
 
-	pidnow->pid_output = pidnow->error * pidnow->Kp + pidnow->integral
-			+ pidnow->derivative;
+    pidnow->pid_output = pidnow->error * pidnow->Kp + pidnow->integral + pidnow->derivative;
 
-	if (pidnow->pid_output > pidnow->output_limit) {
-		pidnow->pid_output = pidnow->output_limit;
-	}
-	if (pidnow->pid_output < -pidnow->output_limit) {
-		pidnow->pid_output = -pidnow->output_limit;
-	}
-	return pidnow->pid_output;
+    if (pidnow->pid_output > pidnow->output_limit) {
+        pidnow->pid_output = pidnow->output_limit;
+    }
+    if (pidnow->pid_output < -pidnow->output_limit) {
+        pidnow->pid_output = -pidnow->output_limit;
+    }
+    return pidnow->pid_output;
 }
 
 int16_t getAbsDif(int16_t number1, int16_t number2){

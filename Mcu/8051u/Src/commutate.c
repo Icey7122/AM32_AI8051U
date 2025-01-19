@@ -111,6 +111,9 @@ void commutate(void){
 	bemfcounter = 0;
 	zcfound = 0;
 	commutation_intervals[step] = commutation_interval;
+	e_com_time = (commutation_intervals[0] + commutation_intervals[1] + 
+				  commutation_intervals[2] + commutation_intervals[3] + 
+				  commutation_intervals[4] + commutation_intervals[5] + 4) >> 1;
 }
 
 void interruptRoutine(void) {
@@ -216,9 +219,7 @@ void getBemfState(void) {
 }
 
 void advanceincrement(void) {
-	static int32_t xdata compareone;
-	static int32_t xdata comparetwo;
-	static int32_t xdata comparethree;
+
 	if (forward) {
 		phase_A_position++;
 		if (phase_A_position > 359) {
@@ -247,13 +248,9 @@ void advanceincrement(void) {
 		}
 	}
 
-	compareone = (((2 * pwmSin[phase_A_position] / SINE_DIVIDER) + DEAD_TIME) * PWM_MAX_ARR / 2000) * SINE_MODE_POWER / 10;
-	comparetwo = (((2 * pwmSin[phase_B_position] / SINE_DIVIDER) + DEAD_TIME) * PWM_MAX_ARR / 2000) * SINE_MODE_POWER / 10;
-	comparethree = (((2 * pwmSin[phase_C_position] / SINE_DIVIDER) + DEAD_TIME) * PWM_MAX_ARR / 2000) * SINE_MODE_POWER / 10;
-
-	setPWMCompare1(compareone);
-	setPWMCompare2(comparetwo);
-	setPWMCompare3(comparethree);
+	setPWMCompare1((((2 * pwmSin[phase_A_position] / SINE_DIVIDER) + DEAD_TIME) * PWM_MAX_ARR / 2000) * SINE_MODE_POWER / 10);
+	setPWMCompare2((((2 * pwmSin[phase_B_position] / SINE_DIVIDER) + DEAD_TIME) * PWM_MAX_ARR / 2000) * SINE_MODE_POWER / 10);
+	setPWMCompare3((((2 * pwmSin[phase_C_position] / SINE_DIVIDER) + DEAD_TIME) * PWM_MAX_ARR / 2000) * SINE_MODE_POWER / 10);
 }
 
 void startMotor(void) {

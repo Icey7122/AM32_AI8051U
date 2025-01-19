@@ -19,14 +19,15 @@
 #define FIRMWARE_NAME 				"AM32 Ref-ESC"
 #define DEAD_TIME 					30
 #define HARDWARE_GROUP_P11
-#define MILLIVOLT_PER_AMP 			65
-#define CURRENT_OFFSET 				0
+#define MILLIVOLT_PER_AMP 			100
+#define CURRENT_OFFSET 				2
 #define TARGET_VOLTAGE_DIVIDER 		110
-#define VOLTAGE_ADC_CHANNEL
-#define VOLTAGE_ADC_PIN 			11//P11
-#define CURRENT_ADC_CHANNEL
-#define CURRENT_ADC_PIN 			12//P12
-// #define USE_SERIAL_TELEMETRY
+#define VOLTAGE_ADC_CHANNEL			0x80
+#define VOLTAGE_ADC_PIN 			2 //P1.7
+#define CURRENT_ADC_CHANNEL			0x40
+#define CURRENT_ADC_PIN 			1 //P1.6
+#define USE_SERIAL_TELEMETRY
+#define BAUD_RATE 115200
 #define TARGET_STALL_PROTECTION_INTERVAL 9000
 
 #endif
@@ -57,11 +58,11 @@
 #endif
 
 #ifndef RAMP_SPEED_STARTUP
-#define RAMP_SPEED_STARTUP 1 // adjusted 2.14 to match duty cycle change between mcu targets.
+#define RAMP_SPEED_STARTUP 2 // adjusted 2.14 to match duty cycle change between mcu targets.
 #endif
 
 #ifndef RAMP_SPEED_LOW_RPM // below commutation interval of 250us
-#define RAMP_SPEED_LOW_RPM 4
+#define RAMP_SPEED_LOW_RPM 6
 #endif
 
 #ifndef RAMP_SPEED_HIGH_RPM
@@ -122,7 +123,7 @@
 #ifdef MCU_8051U
 
 #define CPU_FREQUENCY_MHZ 			40
-#define APPLICATION_ADDRESS 		0xFF1000
+#define APPLICATION_ADDRESS 		(uint32_t)0xFF1000
 #define EEPROM_START_ADD 			(uint32_t)0xFFF800
 #define PWM_CLOCK_MHZ 				CPU_FREQUENCY_MHZ
 

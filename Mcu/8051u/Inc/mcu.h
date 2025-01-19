@@ -195,24 +195,42 @@
 #define gpio_clear(port,pin) 			pin = 0
 #define gpio_read(port,pin) 			pin
 
-#define TMR0_VALUE()  ((uint16_t)TH0 << 8 | TL0)
-#define TMR1_VALUE()  ((uint16_t)TH1 << 8 | TL1)
-#define TMR2_VALUE()  ((uint16_t)T2H << 8 | T2L)
-#define TMR3_VALUE()  ((uint16_t)T3H << 8 | T3L)
-#define TMR4_VALUE()  ((uint16_t)T4H << 8 | T4L)
-#define TMR11_VALUE()  ((uint16_t)T11H << 8 | T11L)
+typedef union 
+{
+	int8_t i8[2];
+	uint8_t u8[2];
+	int16_t i16;
+	uint16_t u16;	
+} union_int16_t;
 
-#define TMR0_RELOAD(time)  	(TH0 = (uint16_t)(65536 - time) >> 8,TL0 = (uint16_t)(65536 - time) & 0xFF)
-#define TMR0_SET(time)		(TH0 = (uint16_t)(time) >> 8,TL0 = (uint16_t)(time) & 0xFF)
-#define TMR1_RELOAD(time)  	(TH1 = (uint16_t)(65536 - time) >> 8,TL1 = (uint16_t)(65536 - time) & 0xFF)
-#define TMR1_SET(time)		(TH1 = (uint16_t)(time) >> 8,TL1 = (uint16_t)(time) & 0xFF)
-#define TMR2_RELOAD(time)  	(T2H = (uint16_t)(65536 - time) >> 8,T2L = (uint16_t)(65536 - time) & 0xFF)
-#define TMR2_SET(time)		(T2H = (uint16_t)(time) >> 8,T2L = (uint16_t)(time) & 0xFF)
-#define TMR3_RELOAD(time)  	(T3H = (uint16_t)(65536 - time) >> 8,T3L = (uint16_t)(65536 - time) & 0xFF)
-#define TMR3_SET(time)		(T3H = (uint16_t)(time) >> 8,T3L = (uint16_t)(time) & 0xFF)
-#define TMR4_RELOAD(time)  	(T4H = (uint16_t)(65536 - time) >> 8,T4L = (uint16_t)(65536 - time) & 0xFF)
-#define TMR4_SET(time)		(T4H = (uint16_t)(time) >> 8,T4L = (uint16_t)(time) & 0xFF)
-#define TMR11_RELOAD(time)  (T11H = (uint16_t)(65536 - time) >> 8,T11L = (uint16_t)(65536 - time) & 0xFF)
-#define TMR11_SET(time)		(T11H = (uint16_t)(time) >> 8,T11L = (uint16_t)(time) & 0xFF)
+extern union_int16_t union_16_T0;
+extern union_int16_t union_16_T1;
+extern union_int16_t union_16_T2;
+extern union_int16_t union_16_T3;
+extern union_int16_t union_16_T4;
+extern union_int16_t union_16_T11;
+
+#define TMR0_VALUE() (union_16_T0.u8[0] = TH0,union_16_T0.u8[1] = TL0,union_16_T0.u16)
+#define TMR1_VALUE() (union_16_T1.u8[0] = TH1,union_16_T1.u8[1] = TL1,union_16_T1.u16)
+#define TMR2_VALUE() (union_16_T2.u8[0] = T2H,union_16_T2.u8[1] = T2L,union_16_T2.u16)
+#define TMR3_VALUE() (union_16_T3.u8[0] = T3H,union_16_T3.u8[1] = T3L,union_16_T3.u16)
+#define TMR4_VALUE() (union_16_T4.u8[0] = T4H,union_16_T4.u8[1] = T4L,union_16_T4.u16)
+#define TMR11_VALUE() (union_16_T11.u8[0] = T11H,union_16_T11.u8[1] = T11L,union_16_T11.u16)
+
+#define TMR0_SET(time)		(TH0 = (uint16_t)time >> 8,TL0 = time)
+#define TMR1_SET(time)		(TH1 = (uint16_t)time >> 8,TL1 = time)
+#define TMR2_SET(time)		(T2H = (uint16_t)time >> 8,T2L = time)
+#define TMR3_SET(time)		(T3H = (uint16_t)time >> 8,T3L = time)
+#define TMR4_SET(time)		(T4H = (uint16_t)time >> 8,T4L = time)
+#define TMR11_SET(time)		(T11H = (uint16_t)time >> 8,T11L = time)
+
+extern void TMR0_RELOAD(uint16_t time);
+extern void TMR1_RELOAD(uint16_t time);
+extern void TMR2_RELOAD(uint16_t time);
+extern void TMR3_RELOAD(uint16_t time);
+extern void TMR4_RELOAD(uint16_t time);
+extern void TMR11_RELOAD(uint16_t time);
+
+
 
 #endif

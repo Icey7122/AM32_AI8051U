@@ -5,7 +5,7 @@
 #include "phaseouts.h"
 #include "peripherals.h"
 
-uint8_t xdata beep_volume = 5;
+uint8_t beep_volume = 5;
 
 void pause(uint16_t ms) {
 	SET_DUTY_CYCLE_ALL(0);
@@ -224,7 +224,7 @@ void playChangedTone(void) {
 }
 
 void playBeaconTune3(void) {
-	static int8_t xdata i;
+	static int8_t i;
 	SET_AUTO_RELOAD_PWM(PWM_AUTORELOAD);
 	__disable_irq();
 	setCaptureCompare();

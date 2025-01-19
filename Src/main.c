@@ -7,8 +7,12 @@
 #include "input.h"
 #include "stc8051u_it.h"
 #include "peripherals.h"
+#include "serial_telemetry.h"
 #include "main.h"
 #include "functions.h"
+#include "adc.h"
+
+#include "stdio.h"
 
 #include "string.h"
 #include "version.h"
@@ -16,28 +20,44 @@
 uint8_t drive_by_rpm = 0;
 uint8_t use_speed_control_loop = 0;
 uint32_t MINIMUM_RPM_SPEED_CONTROL = 1000;
-uint32_t MAXIMUM_RPM_SPEED_CONTROL = 10000;
+uint32_t MAXIMUM_RPM_SPEED_CONTROL = 50000;
 // assign speed control PID values values are x10000
-fastPID xdata speedPid = { // commutation speed loop time
+fastPID speedPid = { // commutation speed loop time
+		{ 0 },		  //err
 		{ 10 },       //kp
 		{ 0 },        //ki
 		{ 100 },      //kd
+		{ 0 }, 		  //integral
+		{ 0 },  	  //derivative
+	    { 0 }, 		  //last_error
+		{ 0 },        //pid_output
 		{ 10000 },    //integral_limit
 		{ 50000 }     //output_limit
 };
 
-fastPID xdata currentPid = { // 1khz loop time
+fastPID currentPid = { // 1khz loop time
+		{ 0 },        //err
 		{ 400 },      //kp
 		{ 0 },        //ki
 		{ 1000 },     //kd
+		{ 0 }, 		  //integral
+		{ 0 },  	  //derivative
+	    { 0 }, 		  //last_error
+		{ 0 },        //pid_output
 		{ 20000 },    //integral_limit
 		{ 100000 }    //output_limit
 };
 
-fastPID xdata stallPid = { // 1khz loop time
+
+fastPID stallPid = { // 1khz loop time
+		{ 0 },  	  //err
 		{ 1 },        //kp
 		{ 0 },        //ki
 		{ 50 },       //kd
+		{ 0 }, 		  //integral
+		{ 0 },  	  //derivative
+	    { 0 }, 		  //last_error
+		{ 0 },        //pid_output
 		{ 10000 },    //integral_limit
 		{ 50000 }     //output_limit
 };
@@ -55,8 +75,9 @@ uint8_t maximum_throttle_change_ramp = 1;
 
 uint8_t cell_counter = 0;	 		//电池计数器
 uint16_t battery_voltage = 0; 		//电池电压
-uint16_t actual_current = 0;		//实际电流
-uint16_t current_limit_adjust;   //电流限制
+int16_t actual_current = 0;		//实际电流
+float consumed_current = 0;		//消耗电流
+int16_t current_limit_adjust;   //电流限制
 uint8_t degrees_celsius;
 
 float stall_protection_adjust;
@@ -66,10 +87,13 @@ uint16_t telem_ms_counter = 0;		//遥测计数器
 uint8_t send_telemetry = 0;			//发送遥测标志
 uint8_t telemetry_interval_ms = 30; 	//遥测间隔
 
+
+uint8_t adc_counter = 0;
 uint16_t ledcounter = 0;			//LED计数器
 uint16_t onekhzcounter = 0;			//1KHz计数器
 uint16_t twentykhzcounter = 0;		//20KHz计数器
 uint16_t signaltimecounter = 0;		//信号计数器
+uint16_t low_voltage_counter = 0;   //低电压计数器
 uint16_t armed_timeout_counter = 0; //握手超时计数器
 
 
@@ -141,14 +165,15 @@ void TwentyKhzRoutine(void)	{ //finish
 		if (onekhzcounter > PID_LOOP_DIVIDER) { // 1khz PID loop
 			onekhzcounter = 0;
 			if (USE_CURRENT_LIMIT && running) {
-				current_limit_adjust -= (int16_t) (doPidCalculations(&currentPid, actual_current, current_limit * 100) / 10000);
+				current_limit_adjust -= doPidCalculations(&currentPid, actual_current, current_limit * 100) / 10000;
 				if (current_limit_adjust < minimum_duty_cycle) {
 					current_limit_adjust = minimum_duty_cycle;
 				}
-				if (current_limit_adjust > PWM_ARR) {
-					current_limit_adjust = PWM_ARR;
+				if (current_limit_adjust > 2000) {
+					current_limit_adjust = 2000;
 				}
 			}
+
 			if (STALL_PROTECTION && running) { // this boosts throttle as the rpm gets lower, for crawlers
 												// and rc cars only, do not use for multirotors.
 				stall_protection_adjust += (doPidCalculations(&stallPid,commutation_interval, stall_protect_target_interval)) / 10000;
@@ -159,6 +184,7 @@ void TwentyKhzRoutine(void)	{ //finish
 					stall_protection_adjust = 0;
 				}
 			}
+			
 			if (use_speed_control_loop && running) {
 				input_override += doPidCalculations(&speedPid, e_com_time,target_e_com_time) / 10000;
 				if (input_override > 2047) {
@@ -210,7 +236,6 @@ void TwentyKhzRoutine(void)	{ //finish
 			if (VARIABLE_PWM) {
 			}
 			adjusted_duty_cycle = ((duty_cycle * PWM_ARR) / 2000) + 1;
-
 		} else {
 
 			if (prop_brake_active) {
@@ -219,6 +244,7 @@ void TwentyKhzRoutine(void)	{ //finish
 				adjusted_duty_cycle = ((duty_cycle * PWM_ARR) / 2000);
 			}
 		}
+		
 		last_duty_cycle = duty_cycle;
 		SET_AUTO_RELOAD_PWM(PWM_ARR);
 		SET_DUTY_CYCLE_ALL(adjusted_duty_cycle);
@@ -320,8 +346,7 @@ void main(void)
 
 	while (1)
 	{
-		if(input_ready)
-		{
+		if(input_ready){
 			setInput();
 			input_ready = 0;
 		}
@@ -335,16 +360,13 @@ void main(void)
 		}
 
 		RELOAD_WATCHDOG_COUNTER();
-		e_com_time = (commutation_intervals[0] + commutation_intervals[1] + 
-					  commutation_intervals[2] + commutation_intervals[3] + 
-					  commutation_intervals[4] + commutation_intervals[5]) >> 1;
 
 		if (VARIABLE_PWM) {
 			PWM_ARR = map(commutation_interval,96,200,PWM_MAX_ARR / 2,PWM_MAX_ARR);
 		}
 
 		if (signaltimecounter > (LOOP_FREQUENCY_HZ >> 1)) { // half second timeout when armed;
-			static uint8_t xdata i;
+			static uint8_t i;
 			if (armed) {
 				allOff();
 				armed = 0;
@@ -374,7 +396,7 @@ void main(void)
 		}
 
 		if (twentykhzcounter > LOOP_FREQUENCY_HZ) { // 1s sample interval 10000
-		// 	consumed_current = (float) actual_current / 360 + consumed_current;
+			consumed_current = (float) actual_current / 360 + consumed_current;
 		// 	switch (dshot_extended_telemetry) {
 
 		// 	case 1:
@@ -451,41 +473,38 @@ void main(void)
 		// 	// NVIC_SetPriority(COMPARATOR_IRQ, 0);
 		// }
 
-		// if (send_telemetry) {
-		// 	makeTelemPackage(degrees_celsius, battery_voltage, actual_current, (uint16_t) consumed_current, e_rpm);
-		// 	send_telem_DMA();
-		// 	send_telemetry = 0;
-		// }
+		if (send_telemetry) {
+			makeTelemPackage(degrees_celsius, battery_voltage, (uint16_t)consumed_current, 0, e_rpm);
+			send_telem_DMA();
+			send_telemetry = 0;
+		}
 
-		// adc_counter++;
-		// if (adc_counter > 200) { // for adc and telemetry
-		// 	ADC_DMA_Callback();
-		// 	// LL_ADC_REG_StartConversion(ADC1);
-		// 	// converted_degrees = __LL_ADC_CALC_TEMPERATURE(3300, ADC_raw_temp, LL_ADC_RESOLUTION_12B);
-		// 	degrees_celsius = converted_degrees;
-		// 	battery_voltage = ((7 * battery_voltage) + ((ADC_raw_volts * 3300 / 4095 * VOLTAGE_DIVIDER) / 100)) >> 3;
-		// 	smoothed_raw_current = getSmoothedCurrent();
-		// 	actual_current = ((smoothed_raw_current * 3300 / 41) - (CURRENT_OFFSET * 100)) / (MILLIVOLT_PER_AMP);
-		// 	if (actual_current < 0) {
-		// 		actual_current = 0;
-		// 	}
-		// 	if (LOW_VOLTAGE_CUTOFF) {
-		// 		if (battery_voltage < (cell_counter * low_cell_volt_cutoff)) {
-		// 			low_voltage_count++;
-		// 			if (low_voltage_count > (20000 - (stepper_sine * 900))) {
-		// 				input = 0;
-		// 				allOff();
-		// 				maskPhaseInterrupts();
-		// 				running = 0;
-		// 				zero_input_count = 0;
-		// 				armed = 0;
-		// 			}
-		// 		} else {
-		// 			low_voltage_count = 0;
-		// 		}
-		// 	}
-		// 	adc_counter = 0;
-		// }
+		adc_counter++;
+		if (adc_counter > 200) { // for adc and telemetry
+			Activate_ADC_DMA();
+			degrees_celsius;
+			battery_voltage = (uint32_t)((7 * battery_voltage) + (((float)ADC_raw_volts * 5000 / 4095 * TARGET_VOLTAGE_DIVIDER) / 100)) >> 3;
+			actual_current = (((float)ADC_raw_current * 5000 / 41) - (CURRENT_OFFSET * 100)) / (MILLIVOLT_PER_AMP);
+			if (actual_current < 0) {
+				actual_current = 0;
+			}
+			if (LOW_VOLTAGE_CUTOFF) {
+				if (battery_voltage < (cell_counter * low_cell_volt_cutoff)) {
+					low_voltage_counter++;
+					if (low_voltage_counter > (20000 - (stepper_sine * 900))) {
+						input = 0;
+						allOff();
+						maskPhaseInterrupts();
+						running = 0;
+						zero_input_counter = 0;
+						armed = 0;
+					}
+				} else {
+					low_voltage_counter = 0;
+				}
+			}
+			adc_counter = 0;
+		}
 
 		stuckcounter = 0;
 		if(stepper_sine == 0) {
@@ -518,7 +537,9 @@ void main(void)
 				filter_level = 2;
 			}
 
-			auto_advance_level = map(duty_cycle, 100, 2000, 13, 23);
+			if(AUTO_ADVANCE) {
+				auto_advance_level = map(duty_cycle, 100, 2000, 13, 23);
+			}
 			
 			if (INTERVAL_TIMER_COUNT > 45000 && running == 1) {
 				bemf_timeout_happened++;
