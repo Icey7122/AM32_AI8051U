@@ -30,6 +30,7 @@ uint8_t bad_count = 0; 			//坏计数
 uint8_t bad_count_threshold = CPU_FREQUENCY_MHZ / 24; //坏计数阈值
 
 uint8_t	zcfound = 0; 			//零交叉发现
+uint16_t lastzctime;			//当前零交叉时间
 uint16_t thiszctime;			//当前零交叉时间
 uint16_t zero_crosses; 			//零交叉
 
@@ -105,7 +106,7 @@ void commutate(void){
 		ENABLE_RISE_INTERRUPT();
 	}
 
-	if (average_interval > 1700) {
+	if (average_interval > 2500) {
 		old_routine = 1;
 	}
 	bemfcounter = 0;
@@ -137,9 +138,9 @@ void interruptRoutine(void) {
 	}
 	__disable_irq();
 	maskPhaseInterrupts();
+    lastzctime = thiszctime;
 	thiszctime = INTERVAL_TIMER_COUNT;
 	SET_INTERVAL_TIMER_COUNT(0);
-
 	SET_AND_ENABLE_COM_INT(waitTime+1);// enable COM_TIMER interrupt
 	__enable_irq();
 }
@@ -148,7 +149,7 @@ void interruptRoutine(void) {
 void PeriodElapsedCallback(void) {
 	DISABLE_COM_TIMER_INT(); // disable interrupt
 	commutate();
-	commutation_interval = (3 * commutation_interval + thiszctime) >> 2;
+	commutation_interval = ((commutation_interval) + ((lastzctime + thiszctime) >> 1))>>1;
 	if (!AUTO_ADVANCE) {
 		advance = (commutation_interval >> 3) * temp_advance; // 60 divde 8 7.5 degree increments
 	} else {
@@ -166,7 +167,7 @@ void PeriodElapsedCallback(void) {
 void zcfoundroutine(void) { // only used in polling mode, blocking routine.
 	thiszctime = INTERVAL_TIMER_COUNT;
 	SET_INTERVAL_TIMER_COUNT(0);
-	commutation_interval = (thiszctime + (3 * commutation_interval)) / 4;
+	commutation_interval = (thiszctime + (3 * commutation_interval)) >> 2 ;
 	advance = (commutation_interval >> 3) * 2; //   7.5 degree increments
 	waitTime = commutation_interval / 2 - advance;
 
@@ -187,7 +188,7 @@ void zcfoundroutine(void) { // only used in polling mode, blocking routine.
 			enableCompInterrupts(); // enable interrupt
 		}
 	} else {
-		if (commutation_interval < 1300) {
+		if (commutation_interval < 2000) {
 			old_routine = 0;
 			enableCompInterrupts(); // enable interrupt
 		}

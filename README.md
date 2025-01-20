@@ -37,17 +37,16 @@ In order to unify the interrupt entry of OPA, the outputs of OPA are merged into
 
 P30 and P31 are used to download bootloader  via STC-LINK1, UART or internal USB.<br>
 
-For detailed information, please refer to the [schematic diagram](docs/sch.pdf), **NOTE: The current firmware does not support current sampling and voltage sampling.**
+For detailed information, please refer to the schematic diagram.
 
 
-## Config
+## Config (New PCB)
 
 ### Flashing BootLoader
 1. For empty chips, BootLoader needs to be flashed via STC-LINK1, UART or internal USB, Connect according to the diagram below.
 
 
-   <img src="docs/image/connect.jpeg" alt="connect" style="zoom:55%;" />
-   <img src="docs/image/PCB.png" alt="PCB" style="zoom:80%;" />
+   <img src="docs/image/connect.jpg" alt="connect" style="zoom:55%;" />
 
 
 2. Open the [Bootloader project](https://github.com/Icey7122/AM32_Bootloader_AI8051U) using AIapp-ISP and download it directly after compilation.
@@ -57,8 +56,8 @@ For detailed information, please refer to the [schematic diagram](docs/sch.pdf),
 
 3. Use a one-wire serial port(You can connect the RX and TX of the USB to serial chip,such as CH340, together and then connect them to the board) to connect to ESC and use tools to configure and update firmware. I used CH340 to perfom, and the wiring is shown in the following figure.
 
-    <img src="docs/image/config.jpeg" alt="config" style="zoom:55%;" />
-
+    <img src="docs/image/config.jpg" alt="config" style="zoom:55%;" />
+    <img src="docs/image/config2.jpeg" alt="config" style="zoom:55%;" />
 
     If the Bootloader is burned correctly, Open the configuration tool ***Esc_Config_Tool_1_82_WIN.exe*** and power on the ESC. Follow the steps in the following figure to click. When connecting for the first time, <font color=red>*'No EEprom'*</font> will be displayed!
     
