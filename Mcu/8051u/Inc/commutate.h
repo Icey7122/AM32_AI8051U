@@ -61,7 +61,7 @@ extern int16_t phase_A_position;
 extern int16_t phase_B_position; 
 extern int16_t phase_C_position;
 
-extern int32_t xdata pwmSin[];
+extern const int32_t pwmSin[];
 
 extern void commutate(void);
 extern void interruptRoutine(void);
