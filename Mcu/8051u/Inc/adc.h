@@ -7,7 +7,7 @@
 #define ADC_TRANS_NUM  64
 #define ADC_CHANNEL_NUM 2
 
-#define ADC_DMA_IRQHandler(val)				ADC_DMA_ISR(val) interrupt DMA_ADC_VECTOR
+#define ADC_DMA_IRQHandler(val)				ADC_DMA_ISR(val) INTERRUPT(DMA_ADC_VECTOR)
 
 extern uint16_t xdata adc_dma_buffer[];
 extern uint16_t ADC_raw_volts;

@@ -165,7 +165,7 @@ void TwentyKhzRoutine(void)	{ //finish
 		if (onekhzcounter > PID_LOOP_DIVIDER) { // 1khz PID loop
 			onekhzcounter = 0;
 			if (USE_CURRENT_LIMIT && running) {
-				current_limit_adjust -= doPidCalculations(&currentPid, actual_current, current_limit * 100) / 10000;
+				current_limit_adjust -= doPidCalculations(&currentPid, actual_current, current_limit * 200) / 10000;
 				if (current_limit_adjust < minimum_duty_cycle) {
 					current_limit_adjust = minimum_duty_cycle;
 				}
@@ -474,7 +474,7 @@ void main(void)
 		// }
 
 		if (send_telemetry) {
-			makeTelemPackage(degrees_celsius, battery_voltage, (uint16_t)consumed_current, 0, e_rpm);
+			makeTelemPackage(degrees_celsius, battery_voltage, actual_current,(uint16_t)consumed_current, e_rpm);
 			send_telem_DMA();
 			send_telemetry = 0;
 		}

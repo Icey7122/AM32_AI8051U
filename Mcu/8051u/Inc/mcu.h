@@ -5,16 +5,12 @@
 #include "intrins.h"
 #include "nstdint.h"
 
-// #ifndef __VSCODE_C51__
-// #define INTERRUPT(x) interrupt x
-// #else
-// #define INTERRUPT(x)
-// #endif
-
 #ifndef __VSCODE_C251__
 #define INTERRUPT(x) interrupt x
+#define USING(x) using x
 #else
 #define INTERRUPT(x)
+#define USING(x)
 #endif
 
 #define __enable_irq() EA = 1

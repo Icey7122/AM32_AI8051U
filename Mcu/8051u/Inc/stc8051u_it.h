@@ -11,10 +11,9 @@
 #include "mcu.h"
 #include "targets.h"
 
-// void CMP_IRQHandler(void);
-// void TWENTY_KHZ_IRQHandler(void);
-// void COM_TIMER_IRQHandler(void);
-// void IC_IRQHandler(void);
-
+#define CMP_IRQHandler(val)				CMP_ISR(val)  INTERRUPT(P4INT_VECTOR) USING(2)
+#define TWENTY_KHZ_IRQHandler(val)		TMR4_ISR(val) INTERRUPT(TMR4_VECTOR)
+#define COM_TIMER_IRQHandler(val)		TMR0_ISR(val) INTERRUPT(TMR0_VECTOR) USING(1)
+#define IC_IRQHandler(val)				PWMB_ISR(val) INTERRUPT(PWMB_VECTOR) USING(3)	
 
 #endif /* INC_STC8051U_IT_H_ */

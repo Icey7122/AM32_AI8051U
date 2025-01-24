@@ -1,5 +1,5 @@
-#ifndef SIGNAL_H
-#define SIGNAL_H
+#ifndef INC_SERVO_H_
+#define INC_SERVO_H_
 
 #include "mcu.h"
 

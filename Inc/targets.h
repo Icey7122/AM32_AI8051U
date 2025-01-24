@@ -22,9 +22,9 @@
 #define MILLIVOLT_PER_AMP 			100
 #define CURRENT_OFFSET 				2
 #define TARGET_VOLTAGE_DIVIDER 		110
-#define VOLTAGE_ADC_CHANNEL			0x80
+#define VOLTAGE_ADC_CHANNEL			1 << 7
 #define VOLTAGE_ADC_PIN 			2 //P1.7
-#define CURRENT_ADC_CHANNEL			0x40
+#define CURRENT_ADC_CHANNEL			1 << 6
 #define CURRENT_ADC_PIN 			1 //P1.6
 #define USE_SERIAL_TELEMETRY
 #define BAUD_RATE 115200
@@ -126,12 +126,6 @@
 #define APPLICATION_ADDRESS 		(uint32_t)0xFF1000
 #define EEPROM_START_ADD 			(uint32_t)0xFFF800
 #define PWM_CLOCK_MHZ 				CPU_FREQUENCY_MHZ
-
-#define CMP_IRQHandler(val)				CMP_ISR(val) interrupt P4INT_VECTOR using 2
-#define TWENTY_KHZ_IRQHandler(val)		TMR4_ISR(val) interrupt TMR4_VECTOR
-#define COM_TIMER_IRQHandler(val)		TMR0_ISR(val) interrupt TMR0_VECTOR using 1
-#define IC_IRQHandler(val)				PWMB_ISR(val) interrupt PWMB_VECTOR	using 3	
-
 
 #define PWM_FREQUNCY_HZ				24000
 #define PWM_AUTORELOAD 				((PWM_CLOCK_MHZ * 1000000 / PWM_FREQUNCY_HZ) - 1)

@@ -1,3 +1,4 @@
+#include "stdio.h"
 #include "uart.h"
 
 uint8_t xdata aTxBuffer[10] = {0};
@@ -30,4 +31,13 @@ void telem_UART1_Init(void)
 void send_telem_DMA(void)
 {
 	DMA_UR1T_CR |= 0x40;	//启动UR1T_DMA传输
+}
+
+#pragma FUNCTIONS (static)
+char putchar(char c)
+{
+	SBUF = c;
+	while (!TI);
+	TI = 0;
+	return c;
 }

@@ -6,7 +6,7 @@
 
 #define BAUD_RATE_RELOAD (uint16_t)(0x10000 - ((CPU_FREQUENCY_MHZ * 1000000) / 4 / BAUD_RATE))
 
-#define UART1_DMA_IRQHandler(val)				UART1_DMA_ISR(val) interrupt DMA_UR1T_VECTOR
+#define UART1_DMA_IRQHandler(val)				UART1_DMA_ISR(val) INTERRUPT(DMA_UR1T_VECTOR)
 
 extern uint8_t xdata aTxBuffer[10];
 

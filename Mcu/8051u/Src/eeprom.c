@@ -273,7 +273,7 @@ void loadEEpromSettings(void) {
 		}
 
 		if (eepromBuffer[44] > 0 && eepromBuffer[44] < 100) {
-			current_limit = eepromBuffer[44] * 2;
+			current_limit = eepromBuffer[44];
 			USE_CURRENT_LIMIT = 1;
 		}
 

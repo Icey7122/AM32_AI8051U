@@ -300,13 +300,3 @@ void ADC_Init(void) {
 	DMA_ADC_CR = 0x80;      //DMA_ADC ENABLE
 
 }
-
-#include "stdio.h"
-#pragma FUNCTIONS (static)
-char putchar(char c)
-{
-	SBUF = c;
-	while (!TI);
-	TI = 0;
-	return c;
-}
