@@ -263,7 +263,7 @@
             <uRentF>1</uRentF>
             <uUch>0</uUch>
             <uFlt64>1</uFlt64>
-            <Fuzzy>3</Fuzzy>
+            <Fuzzy>6</Fuzzy>
             <Optim>7</Optim>
             <wLevel>3</wLevel>
             <SizSpd>1</SizSpd>
@@ -349,6 +349,11 @@
               <FileType>1</FileType>
               <FilePath>.\Src\serial_telemetry.c</FilePath>
             </File>
+            <File>
+              <FileName>ushot.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\ushot.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -398,11 +403,6 @@
               <FileName>uart.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Mcu\8051u\Src\uart.c</FilePath>
-            </File>
-            <File>
-              <FileName>ushot.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Src\ushot.c</FilePath>
             </File>
           </Files>
         </Group>
