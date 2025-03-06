@@ -10,177 +10,160 @@
 #include "eeprom.h"
 #include "commutate.h"
 
-STEP_FUNC_t* comStep[6] = {STEP_AB,STEP_CB,STEP_CA,STEP_BA,STEP_BC,STEP_AC};
-
-///////////////////////////////////////////////PHASE A////////////////////////////////////////////////////
-void phaseAPWM(void) {
-	if (!COMP_PWM) {
-		PWMA_ENO &= ~0x02;
-		gpio_clear(PHASE_A_GPIO_PORT_LOW,PHASE_A_GPIO_LOW);
-	} else {
-		PWMA_ENO |= 0x02;
-	}
-	PWMA_ENO |= 0x01;
-}
-
-void phaseAFLOAT(void) {
-	PWMA_ENO &= ~0x03;
-	gpio_clear(PHASE_A_GPIO_PORT_LOW,PHASE_A_GPIO_LOW);
-	gpio_clear(PHASE_A_GPIO_PORT_HIGH,PHASE_A_GPIO_HIGH);
-}
-
-void phaseALOW(void) {
-	PWMA_ENO &= ~0x03;
-	gpio_set(PHASE_A_GPIO_PORT_LOW,PHASE_A_GPIO_LOW);
-	gpio_clear(PHASE_A_GPIO_PORT_HIGH,PHASE_A_GPIO_HIGH);
-}
-
-
-///////////////////////////////////////////////PHASE B////////////////////////////////////////////////////
-void phaseBPWM(void) {
-	if (!COMP_PWM) { // for future
-		PWMA_ENO &= ~0x08;
-		gpio_clear(PHASE_B_GPIO_PORT_LOW,PHASE_B_GPIO_LOW);
-	} else {
-		PWMA_ENO |= 0x08;
-	}
-	PWMA_ENO |= 0x04;
-}
-
-void phaseBFLOAT(void) {
-	PWMA_ENO &= ~0x0C;
-	gpio_clear(PHASE_B_GPIO_PORT_LOW,PHASE_B_GPIO_LOW);
-	gpio_clear(PHASE_B_GPIO_PORT_HIGH,PHASE_B_GPIO_HIGH);
-}
-
-void phaseBLOW(void) {
-	PWMA_ENO &= ~0x0C;
-	gpio_set(PHASE_B_GPIO_PORT_LOW,PHASE_B_GPIO_LOW);
-	gpio_clear(PHASE_B_GPIO_PORT_HIGH,PHASE_B_GPIO_HIGH);
-}
-
-///////////////////////////////////////////////PHASE C////////////////////////////////////////////////////
-
-void phaseCPWM(void) {
-	if (!COMP_PWM) {
-		PWMA_ENO &= ~0x20;
-		gpio_clear(PHASE_C_GPIO_PORT_LOW,PHASE_C_GPIO_LOW);
-	} else {
-		PWMA_ENO |= 0x20;
-	}
-	PWMA_ENO |= 0x10;
-}
-
-void phaseCFLOAT(void) {
-	PWMA_ENO &= ~0x30;
-	gpio_clear(PHASE_C_GPIO_PORT_LOW,PHASE_C_GPIO_LOW);
-	gpio_clear(PHASE_C_GPIO_PORT_HIGH,PHASE_C_GPIO_HIGH);
-}
-
-void phaseCLOW(void) {
-	PWMA_ENO &= ~0x30;
-	gpio_set(PHASE_C_GPIO_PORT_LOW,PHASE_C_GPIO_LOW);
-	gpio_clear(PHASE_C_GPIO_PORT_HIGH,PHASE_C_GPIO_HIGH);
-}
+phaseFUNC_t* comStep[6] = {phaseAB,phaseCB,phaseCA,phaseBA,phaseBC,phaseAC};
 
 ///////////////////////////////////////////////PHASE STEP////////////////////////////////////////////////////
-
-void STEP_AB(void)
+void phaseAB(void)
 {
-	phaseCFLOAT();
-	phaseBLOW();
-	phaseAPWM();
-
+// 	A:PWM  B:LOW  C:FLOAT
+	register PWM_TypeDef *PWMA = PWMA_ADDRESS;
+	if(COMP_PWM){
+		PWMA->CCER1 = 0x85;	
+	} else {
+		PWMA->CCER1 = 0x81;	
+	}
+	PWMA->CCER2 = 0x00;
+	PWMA->EGR = 0x20;
 	CMPEXCFG = PHASE_C_COMP;
 }
 
 
-void STEP_CB(void)
+void phaseCB(void)
 {
-	phaseAFLOAT();
-	phaseBLOW();
-	phaseCPWM();
-
+// 	C:PWM  B:LOW  A:FLOAT
+	register PWM_TypeDef *PWMA = PWMA_ADDRESS;
+	if(COMP_PWM){
+		PWMA->CCER2 = 0x05;	
+	} else {
+		PWMA->CCER2 = 0x01;	
+	}
+	PWMA->CCER1 = 0x80;
+	PWMA->EGR = 0x20;
 	CMPEXCFG = PHASE_A_COMP;
 }
 
 
 
-void STEP_CA(void)
+void phaseCA(void)
 {
-	phaseBFLOAT();
-	phaseALOW();
-	phaseCPWM();
-
+// 	C:PWM  A:LOW  B:FLOAT
+	register PWM_TypeDef *PWMA = PWMA_ADDRESS;
+	if(COMP_PWM){
+		PWMA->CCER2 = 0x05;	
+	} else {
+		PWMA->CCER2 = 0x01;	
+	}
+	PWMA->CCER1 = 0x08;
+	PWMA->EGR = 0x20;
 	CMPEXCFG = PHASE_B_COMP;
 }
 
 
-void STEP_BA(void)
+void phaseBA(void)
 {
-	phaseCFLOAT();
-	phaseALOW();
-	phaseBPWM();
-
+// 	B:PWM  A:LOW  C:FLOAT
+	register PWM_TypeDef *PWMA = PWMA_ADDRESS;
+	if(COMP_PWM){
+		PWMA->CCER1 = 0x58;	
+	} else {
+		PWMA->CCER1 = 0x18;	
+	}
+	PWMA->CCER2 = 0x00;
+	PWMA->EGR = 0x20;
 	CMPEXCFG = PHASE_C_COMP;
 }
 
 
 
-void STEP_BC(void)
+void phaseBC(void)
 {
-	phaseAFLOAT();
-	phaseCLOW();
-	phaseBPWM();
-
+// 	B:PWM  C:LOW  A:FLOAT
+	register PWM_TypeDef *PWMA = PWMA_ADDRESS;
+	if(COMP_PWM){
+		PWMA->CCER1 = 0x50;	
+	} else {
+		PWMA->CCER1 = 0x10;	
+	}
+	PWMA->CCER2 = 0x08;
+	PWMA->EGR = 0x20;
 	CMPEXCFG = PHASE_A_COMP;
 }
 
 
 
-void STEP_AC(void)
+void phaseAC(void)
 {
-	phaseBFLOAT();
-	phaseCLOW();
-	phaseAPWM();
-
+// 	A:PWM  C:LOW  B:FLOAT
+	register PWM_TypeDef *PWMA = PWMA_ADDRESS;
+	if(COMP_PWM){
+		PWMA->CCER1 = 0x05;	
+	} else {
+		PWMA->CCER1 = 0x01;	
+	}
+	PWMA->CCER2 = 0x08;
+	PWMA->EGR = 0x20;
 	CMPEXCFG = PHASE_B_COMP;
 }
 
 
 
 void allOff(void) {
-	phaseAFLOAT();
-	phaseBFLOAT();
-	phaseCFLOAT();
+// 	A:FLOAT  B:FLOAT  C:FLOAT
+	register PWM_TypeDef *PWMA = PWMA_ADDRESS;
+	PWMA->CCER1 = 0x00;
+	PWMA->CCER2 = 0x00;	
+	PWMA->EGR = 0x20;
 }
 
 
 
 void fullBrake(void) { // full braking shorting all low sides
-	phaseALOW();
-	phaseBLOW();
-	phaseCLOW();
+// 	A:LOW  B:LOW  C:LOW
+	register PWM_TypeDef *PWMA = PWMA_ADDRESS;
+	PWMA->CCER1 = 0x88;
+	PWMA->CCER2 = 0x08;	
+	PWMA->EGR = 0x20;
 }
 
 
 void allpwm(void) { // for stepper_sine
-	phaseAPWM();
-	phaseBPWM();
-	phaseCPWM();
+// 	A:PWM  B:PWM  C:PWM
+	register PWM_TypeDef *PWMA = PWMA_ADDRESS;
+	if(COMP_PWM){
+		PWMA->CCER1 = 0x55;	
+		PWMA->CCER2 = 0x05;
+	} else {
+		PWMA->CCER1 = 0x11;	
+		PWMA->CCER2 = 0x01;
+	}
+	PWMA->EGR = 0x20;
 }
 
 
 void twoChannelForward(void) {
-	phaseAPWM();
-	phaseBLOW();
-	phaseCPWM();
+// 	A:PWM  B:LOW  C:PWM
+	register PWM_TypeDef *PWMA = PWMA_ADDRESS;
+	if(COMP_PWM){
+		PWMA->CCER1 = 0x85;	
+		PWMA->CCER2 = 0x05;
+	} else {
+		PWMA->CCER1 = 0x81;	
+		PWMA->CCER2 = 0x01;
+	}
+	PWMA->EGR = 0x20;
 }
 
 void twoChannelReverse(void) {
-	phaseALOW();
-	phaseBPWM();
-	phaseCLOW();
+// 	A:LOW  B:PWM  C:LOW
+	register PWM_TypeDef *PWMA = PWMA_ADDRESS;
+	if(COMP_PWM){
+		PWMA->CCER1 = 0x58;	
+		PWMA->CCER2 = 0x08;
+	} else {
+		PWMA->CCER1 = 0x18;	
+		PWMA->CCER2 = 0x08;
+	}
+	PWMA->EGR = 0x20;
 }
 
 
@@ -189,11 +172,10 @@ void proportionalBrake(void) { // alternate all channels between braking (ABC LO
 // alternate mode and turn upper OFF for each
 // channel
 // turn all HIGH channels off for ABC
-
-	PWMA_ENO = 0x2A;
-	gpio_clear(PHASE_A_GPIO_PORT_HIGH,PHASE_A_GPIO_HIGH);
-	gpio_clear(PHASE_B_GPIO_PORT_HIGH,PHASE_B_GPIO_HIGH);
-	gpio_clear(PHASE_C_GPIO_PORT_HIGH,PHASE_C_GPIO_HIGH);
+	register PWM_TypeDef *PWMA = PWMA_ADDRESS;
+	PWMA->CCER1 = 0xCC;	
+	PWMA->CCER2 = 0x0C;
+	PWMA->EGR = 0x20;
 }
 
 

@@ -11,43 +11,46 @@
 #include "commutate.h"
 #include "peripherals.h"
 
-int8_t 	step = 0;				//换相步骤
-uint8_t forward = 1; 			//正转
-uint8_t rising = 0;				//上升沿
-uint8_t filter_level = 0; 		//滤波等级
-uint8_t desync_check; 			//失步检查
-uint8_t desync_happened = 0; 	//失步标志
-uint8_t prop_brake_active = 0; 	//比例制动激活
-uint8_t old_routine = 0; 		//旧周期
+// Flags
+bool forward = 1; // 正转
+bool rising = 0; // 上升沿
+bool desync_check; // 失步检查
+bool prop_brake_active = 0; // 比例制动激活
+bool old_routine = 0; // 旧周期
+bool zcfound = 0; // 零交叉发现
+bool do_once_sinemode;
+uint8_t desync_happened = 0; // 失步标志
 
-uint8_t stuckcounter = 0; 		//卡住计数器
-uint8_t bemfcounter = 0; 		//BEMF计数器
+// Counters
+int8_t step = 0; // 换相步骤
+uint8_t filter_level = 0; // 滤波等级
+uint8_t stuckcounter = 0; // 卡住计数器
+uint8_t bemfcounter = 0; // BEMF计数器
 uint8_t min_bemf_counts_up = TARGET_MIN_BEMF_COUNTS;
 uint8_t min_bemf_counts_down = TARGET_MIN_BEMF_COUNTS;
-uint8_t bemf_timeout = 10;				//BEMF超时
-uint8_t bemf_timeout_happened = 0;		//BEMF超时标志
-uint8_t bad_count = 0; 			//坏计数
-uint8_t bad_count_threshold = CPU_FREQUENCY_MHZ / 24; //坏计数阈值
-
-uint8_t	zcfound = 0; 			//零交叉发现
-uint16_t lastzctime;			//当前零交叉时间
-uint16_t thiszctime;			//当前零交叉时间
-uint16_t zero_crosses; 			//零交叉
-
-uint8_t temp_advance = 2;		//临时提前
-uint8_t auto_advance_level; 	//自动提前等级
-uint16_t advance; 				//提前
-uint16_t waitTime; 				//换相等待时间
-uint16_t average_interval; 			//平均间隔
-uint16_t last_average_interval;
-uint16_t commutation_interval = 12500; 		//换相间隔
-uint16_t commutation_intervals[6] = { 0 }; 	//换相间隔数组
-uint16_t last_commutation_interval;		
-
-uint16_t step_delay = 100;
+uint8_t bemf_timeout = 10; // BEMF超时
+uint8_t bemf_timeout_happened = 0; // BEMF超时标志
+uint8_t bad_counter = 0; // 坏计数
+uint8_t bad_counts_threshold = CPU_FREQUENCY_MHZ / 24; // 坏计数阈值
+uint8_t temp_advance = 2; // 临时提前
+uint8_t auto_advance_level; // 自动提前等级
 uint8_t stepper_sine = 0;
 uint8_t changeover_step = 4;
-uint8_t do_once_sinemode;
+
+// Timing
+uint16_t lastzctime; // 当前零交叉时间
+uint16_t thiszctime; // 当前零交叉时间
+uint16_t zero_crosses; // 零交叉
+uint16_t advance; // 提前
+uint16_t waitTime; // 换相等待时间
+uint16_t average_interval; // 平均间隔
+uint16_t last_average_interval;
+uint16_t commutation_interval = 12500; // 换相间隔
+uint16_t commutation_intervals[6] = { 0 }; // 换相间隔数组
+uint16_t last_commutation_interval;
+uint16_t step_delay = 100;
+
+// Positions
 int16_t phase_A_position;
 int16_t phase_B_position;
 int16_t phase_C_position;
@@ -120,7 +123,7 @@ void commutate(void){
 void interruptRoutine(void) {
 	static uint8_t i;
 	if (average_interval > 125) {
-		if ((INTERVAL_TIMER_COUNT < 125) && (duty_cycle < 600)&& (zero_crosses < 500)) { // should be impossible, desync?exit anyway
+		if ((INTERVAL_TIMER_COUNT() < 125) && (duty_cycle < 600)&& (zero_crosses < 500)) { // should be impossible, desync?exit anyway
 			return;
 		}
 		stuckcounter++; // stuck at 100 interrupts before the main loop happens
@@ -139,7 +142,7 @@ void interruptRoutine(void) {
 	__disable_irq();
 	maskPhaseInterrupts();
     lastzctime = thiszctime;
-	thiszctime = INTERVAL_TIMER_COUNT;
+	thiszctime = INTERVAL_TIMER_COUNT();
 	SET_INTERVAL_TIMER_COUNT(0);
 	SET_AND_ENABLE_COM_INT(waitTime+1);// enable COM_TIMER interrupt
 	__enable_irq();
@@ -165,21 +168,23 @@ void PeriodElapsedCallback(void) {
 }
 
 void zcfoundroutine(void) { // only used in polling mode, blocking routine.
-	thiszctime = INTERVAL_TIMER_COUNT;
+	thiszctime = INTERVAL_TIMER_COUNT();
 	SET_INTERVAL_TIMER_COUNT(0);
 	commutation_interval = (thiszctime + (3 * commutation_interval)) >> 2 ;
 	advance = (commutation_interval >> 3) * 2; //   7.5 degree increments
 	waitTime = commutation_interval / 2 - advance;
 
-	while ((INTERVAL_TIMER_COUNT) < (waitTime)) {
+	while ((INTERVAL_TIMER_COUNT()) < (waitTime)) {
 		if (zero_crosses < 5) {
 			break;
 		}
 	}
-	TMR0_RELOAD(waitTime + 1); // enable COM_TIMER interrupt
+
+
+	COM_TIMER_COUNT(waitTime + 1); // enable COM_TIMER interrupt
 	commutate();
 	bemfcounter = 0;
-	bad_count = 0;
+	bad_counter = 0;
 
 	zero_crosses++;
 	if (STALL_PROTECTION || RC_CAR_REVERSE) {
@@ -197,13 +202,13 @@ void zcfoundroutine(void) { // only used in polling mode, blocking routine.
 
 void getBemfState(void) {
 	static uint8_t current_state = 0;
-	current_state = !getCompOutputLevel(); // polarity reversed
+	current_state = ~getCompOutputLevel(); // polarity reversed
 	if (rising) {
 		if (current_state) {
 			bemfcounter++;
 		} else {
-			bad_count++;
-			if (bad_count > bad_count_threshold) {
+			bad_counter++;
+			if (bad_counter > bad_counts_threshold) {
 				bemfcounter = 0;
 			}
 		}
@@ -211,8 +216,8 @@ void getBemfState(void) {
 		if (!current_state) {
 			bemfcounter++;
 		} else {
-			bad_count++;
-			if (bad_count > bad_count_threshold) {
+			bad_counter++;
+			if (bad_counter > bad_counts_threshold) {
 				bemfcounter = 0;
 			}
 		}

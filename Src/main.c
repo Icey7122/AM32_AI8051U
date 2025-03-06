@@ -1,3 +1,4 @@
+#include "main.h"
 #include "commutate.h"
 #include "eeprom.h"
 #include "mcu.h"
@@ -8,93 +9,95 @@
 #include "stc8051u_it.h"
 #include "peripherals.h"
 #include "serial_telemetry.h"
-#include "main.h"
 #include "functions.h"
 #include "adc.h"
 
 #include "stdio.h"
-
 #include "string.h"
 #include "version.h"
 
+// Flags
+bool armed = 0;
+bool send_telemetry = 0; // 发送遥测标志
+bool maximum_throttle_change_ramp = 1;
 uint8_t drive_by_rpm = 0;
 uint8_t use_speed_control_loop = 0;
-uint32_t MINIMUM_RPM_SPEED_CONTROL = 1000;
-uint32_t MAXIMUM_RPM_SPEED_CONTROL = 50000;
-// assign speed control PID values values are x10000
-fastPID speedPid = { // commutation speed loop time
-		{ 0 },		  //err
-		{ 10 },       //kp
-		{ 0 },        //ki
-		{ 100 },      //kd
-		{ 0 }, 		  //integral
-		{ 0 },  	  //derivative
-	    { 0 }, 		  //last_error
-		{ 0 },        //pid_output
-		{ 10000 },    //integral_limit
-		{ 50000 }     //output_limit
-};
-
-fastPID currentPid = { // 1khz loop time
-		{ 0 },        //err
-		{ 400 },      //kp
-		{ 0 },        //ki
-		{ 1000 },     //kd
-		{ 0 }, 		  //integral
-		{ 0 },  	  //derivative
-	    { 0 }, 		  //last_error
-		{ 0 },        //pid_output
-		{ 20000 },    //integral_limit
-		{ 100000 }    //output_limit
-};
-
-
-fastPID stallPid = { // 1khz loop time
-		{ 0 },  	  //err
-		{ 1 },        //kp
-		{ 0 },        //ki
-		{ 50 },       //kd
-		{ 0 }, 		  //integral
-		{ 0 },  	  //derivative
-	    { 0 }, 		  //last_error
-		{ 0 },        //pid_output
-		{ 10000 },    //integral_limit
-		{ 50000 }     //output_limit
-};
-
-uint8_t armed = 0;
 uint8_t running = 0;
 uint8_t fast_accel = 0;
 
+// Speed Control
+uint32_t MINIMUM_RPM_SPEED_CONTROL = 1000;
+uint32_t MAXIMUM_RPM_SPEED_CONTROL = 100000;
+
+// PID Controllers
+fastPID speedPid = { // commutation speed loop time
+        { 0 },		  // err
+        { 10 },       // kp
+        { 0 },        // ki
+        { 100 },      // kd
+        { 0 }, 		  // integral
+        { 0 },  	  // derivative
+        { 0 }, 		  // last_error
+        { 0 },        // pid_output
+        { 10000 },    // integral_limit
+        { 50000 }     // output_limit
+};
+
+fastPID currentPid = { // 1khz loop time
+        { 0 },        // err
+        { 400 },      // kp
+        { 0 },        // ki
+        { 1000 },     // kd
+        { 0 }, 		  // integral
+        { 0 },  	  // derivative
+        { 0 }, 		  // last_error
+        { 0 },        // pid_output
+        { 20000 },    // integral_limit
+        { 100000 }    // output_limit
+};
+
+fastPID stallPid = { // 1khz loop time
+        { 0 },  	  // err
+        { 1 },        // kp
+        { 0 },        // ki
+        { 50 },       // kd
+        { 0 }, 		  // integral
+        { 0 },  	  // derivative
+        { 0 }, 		  // last_error
+        { 0 },        // pid_output
+        { 10000 },    // integral_limit
+        { 50000 }     // output_limit
+};
+
+// RPM and Timing
 uint16_t e_rpm;
 uint16_t k_erpm;
 uint32_t e_com_time;
 uint32_t target_e_com_time;
 
-uint8_t maximum_throttle_change_ramp = 1;
-
-uint8_t cell_counter = 0;	 		//电池计数器
-uint16_t battery_voltage = 0; 		//电池电压
-int16_t actual_current = 0;		//实际电流
-float consumed_current = 0;		//消耗电流
-int16_t current_limit_adjust;   //电流限制
+// Battery and Current
+uint8_t cell_counter = 0; // 电池计数器
+uint16_t battery_voltage = 0; // 电池电压
+int16_t actual_current = 0; // 实际电流
+float consumed_current = 0; // 消耗电流
+int16_t current_limit_adjust; // 电流限制
 uint8_t degrees_celsius;
 
+// Stall Protection
 float stall_protection_adjust;
 uint16_t stall_protect_target_interval = TARGET_STALL_PROTECTION_INTERVAL;
 
-uint16_t telem_ms_counter = 0;		//遥测计数器
-uint8_t send_telemetry = 0;			//发送遥测标志
-uint8_t telemetry_interval_ms = 30; 	//遥测间隔
+// Telemetry
+uint16_t telem_ms_counter = 0; // 遥测计数器
+uint8_t telemetry_interval_ms = 30; // 遥测间隔
 
-
-uint8_t adc_counter = 0;
-uint16_t ledcounter = 0;			//LED计数器
-uint16_t onekhzcounter = 0;			//1KHz计数器
-uint16_t twentykhzcounter = 0;		//20KHz计数器
-uint16_t signaltimecounter = 0;		//信号计数器
-uint16_t low_voltage_counter = 0;   //低电压计数器
-uint16_t armed_timeout_counter = 0; //握手超时计数器
+// Counters
+uint16_t ledcounter = 0; // LED计数器
+uint16_t onekhzcounter = 0; // 1KHz计数器
+uint16_t twentykhzcounter = 0; // 20KHz计数器
+uint16_t signaltimecounter = 0; // 信号计数器
+uint16_t low_voltage_counter = 0; // 低电压计数器
+uint16_t armed_timeout_counter = 0; // 握手超时计数器
 
 
 void TwentyKhzRoutine(void)	{ //finish
@@ -319,7 +322,7 @@ void main(void)
 		throttle_max_at_low_rpm = 1000;
 		BI_DIRECTION = 1;
 		USE_SIN_START = 0;
-		low_rpm_throttle_limit = 1;
+		LOW_RPM_THROTTLE_LIMIT = 1;
 		VARIABLE_PWM = 0;
 		// stall_protection = 1;
 		COMP_PWM = 0;
@@ -337,7 +340,7 @@ void main(void)
 
 	RELOAD_WATCHDOG_COUNTER();
 
-	receiveDshotDma();
+	receiveDmaBuffer();
 	if (drive_by_rpm) {
 		use_speed_control_loop = 1;
 	}
@@ -345,12 +348,8 @@ void main(void)
 	setInputPullUp();
 
 	while (1)
-	{
-		if(input_ready){
-			setInput();
-			input_ready = 0;
-		}
-		
+	{	
+
 		if(zero_crosses < 5){
 	  		min_bemf_counts_up = TARGET_MIN_BEMF_COUNTS * 2;
 			min_bemf_counts_down = TARGET_MIN_BEMF_COUNTS * 2;
@@ -396,24 +395,7 @@ void main(void)
 		}
 
 		if (twentykhzcounter > LOOP_FREQUENCY_HZ) { // 1s sample interval 10000
-			consumed_current = (float) actual_current / 360 + consumed_current;
-		// 	switch (dshot_extended_telemetry) {
-
-		// 	case 1:
-		// 		send_extended_dshot = (uint16_t) 2 << 8 | degrees_celsius;
-		// 		dshot_extended_telemetry = 2;
-		// 		break;
-		// 	case 2:
-		// 		send_extended_dshot = (uint16_t) 6 << 8
-		// 				| (uint8_t) actual_current / 50;
-		// 		dshot_extended_telemetry = 3;
-		// 		break;
-		// 	case 3:
-		// 		send_extended_dshot = (uint16_t) 4 << 8
-		// 				| (uint8_t) (battery_voltage / 25);
-		// 		dshot_extended_telemetry = 1;
-		// 		break;
-		// 	}
+			consumed_current = (float) actual_current / 360.0 + consumed_current;
 			twentykhzcounter = 0;
 		}
 
@@ -452,36 +434,14 @@ void main(void)
 			last_average_interval = average_interval;
 		}
 
-		// if (dshot_telemetry && (commutation_interval > DSHOT_PRIORITY_THRESHOLD)) {
-		// 	PPWMBH = 1;
-		// 	PPWMB = 1;
-
-		// 	PCMPH = 1;
-		// 	PCMP = 0;
-
-		// 	// NVIC_SetPriority(IC_DMA_IRQ_NAME, 0);
-		// 	// NVIC_SetPriority(COM_TIMER_IRQ, 1);
-		// 	// NVIC_SetPriority(COMPARATOR_IRQ, 1);
-		// } else {
-		// 	PPWMBH = 1;
-		// 	PPWMB = 0;
-
-		// 	PCMPH = 1;
-		// 	PCMP = 1;
-		// 	// NVIC_SetPriority(IC_DMA_IRQ_NAME, 1);
-		// 	// NVIC_SetPriority(COM_TIMER_IRQ, 0);
-		// 	// NVIC_SetPriority(COMPARATOR_IRQ, 0);
-		// }
-
 		if (send_telemetry) {
-			makeTelemPackage(degrees_celsius, battery_voltage, actual_current,(uint16_t)consumed_current, e_rpm);
+			makeTelemPackage(degrees_celsius, battery_voltage, actual_current,consumed_current, e_rpm);
 			send_telem_DMA();
 			send_telemetry = 0;
 		}
 
-		adc_counter++;
-		if (adc_counter > 200) { // for adc and telemetry
-			Activate_ADC_DMA();
+		if (DMA_ADC_STA) { // for adc and telemetry
+			ADC_DMA_Callback();
 			degrees_celsius;
 			battery_voltage = (uint32_t)((7 * battery_voltage) + (((float)ADC_raw_volts * 5000 / 4095 * TARGET_VOLTAGE_DIVIDER) / 100)) >> 3;
 			actual_current = (((float)ADC_raw_current * 5000 / 41) - (CURRENT_OFFSET * 100)) / (MILLIVOLT_PER_AMP);
@@ -503,7 +463,8 @@ void main(void)
 					low_voltage_counter = 0;
 				}
 			}
-			adc_counter = 0;
+			DMA_ADC_STA = 0x00;
+			Activate_ADC_DMA();
 		}
 
 		stuckcounter = 0;
@@ -511,7 +472,7 @@ void main(void)
 			e_rpm = running * (600000 / e_com_time); // in tens of rpm
 			k_erpm = e_rpm / 10; // ecom time is time for one electrical revolution in microseconds
 
-			if (low_rpm_throttle_limit) { // some hardware doesn't need this, its on
+			if (LOW_RPM_THROTTLE_LIMIT) { // some hardware doesn't need this, its on
 										  // by default to keep hardware / motors
 										  // protected but can slow down the response
 										  // in the very low end a little.
@@ -541,12 +502,12 @@ void main(void)
 				auto_advance_level = map(duty_cycle, 100, 2000, 13, 23);
 			}
 			
-			if (INTERVAL_TIMER_COUNT > 45000 && running == 1) {
+			if (INTERVAL_TIMER_COUNT() > 45000 && running == 1) {
 				bemf_timeout_happened++;
 
 				maskPhaseInterrupts();
 				old_routine = 1;
-				if (duty_cycle < 48) {
+				if (input < 48) {
 					running = 0;
 					commutation_interval = 5000;
 				}

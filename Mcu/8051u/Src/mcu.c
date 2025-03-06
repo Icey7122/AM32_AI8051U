@@ -7,6 +7,9 @@ union_int16_t union_16_T3;
 union_int16_t union_16_T4;
 union_int16_t union_16_T11;
 
+PWM_TypeDef *PWMA_ADDRESS = ((PWM_TypeDef far *)0x7efec0);
+PWM_TypeDef *PWMB_ADDRESS = ((PWM_TypeDef far *)0x7efee0);
+
 void TMR0_RELOAD(uint16_t time) {
 	time = 65536 - time;
 	TH0 = time >> 8;

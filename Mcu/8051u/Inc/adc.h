@@ -13,6 +13,7 @@ extern uint16_t xdata adc_dma_buffer[];
 extern uint16_t ADC_raw_volts;
 extern uint16_t ADC_raw_current;
 
+extern void ADC_Init(void);
 extern void ADC_DMA_Callback(void);
 extern void Activate_ADC_DMA(void);
 

@@ -9,6 +9,8 @@
 #include "targets.h"
 #include "functions.h"
 #include "adc.h"
+#include "ushot.h"
+#include "servo.h"
 
 void initCorePeripherals(void) {
 
@@ -17,6 +19,7 @@ void initCorePeripherals(void) {
 
 	GPIO_Init();
 	CMP_Init();
+	UART1_Init();
 
 	PWMA_Init();
 	TMR0_Init();
@@ -25,10 +28,12 @@ void initCorePeripherals(void) {
 	TMR4_Init();
 	TMR11_Init();
 	UN_PWMB_Init();
+	UN_UART_Init();
+	EXIT3_Init();
 	ADC_Init();
 
 #ifdef USE_SERIAL_TELEMETRY
-	telem_UART1_Init();
+	telem_UART_Init();
 #endif
 }
 
@@ -37,20 +42,16 @@ void initAfterJump(void) {
 	WTST = 0;
 	P_SW2 = 0x80;
 
-	IAP_TPS = 40;
-	RSTFLAG |= 0x04;
+	IAP_TPS = CPU_FREQUENCY_MHZ;
+	RSTFLAG |= 0x08;
 }
 
 void configSystemClock(void){
 	__disable_irq();
 
-	// IRCBAND |= 0x03;
-	// VRTRIM = 26;
-	// IRTRIM = 107;
-
-	USBCLK |= (1 << 7);
 	USBCLK &= ~(3 << 5);
 	USBCLK |= (2 << 5);
+	USBCLK |= (1 << 7);
 	_nop_();
     _nop_();
     _nop_();
@@ -60,11 +61,11 @@ void configSystemClock(void){
 	CLKSEL |= (1 << 6);
 	MCLKOCR = 0x01;
 	IRC48MCR = 0x80;
-	while (!(IRC48MCR & 1))
-		;
+	while (!(IRC48MCR & 1));
 	IRCBAND &= ~(3 << 6);
 	IRCBAND |= (2 << 6);
 	DMAIR = 0x3F; 		//TPU时钟 120M
+	HSCLKDIV = 0x00;
 	__enable_irq();
 }
 
@@ -95,7 +96,7 @@ void CMP_Init(void)
 	CMPCR1 = 0;
 	NIE = PIE = 0;
 	CMPEN = CMPOE = 1;
-	CMPCR2 = 48;			//improtant
+	CMPCR2 = 42;			//improtant
 	DISFLT = 0;
     // CMPCR2 &= ~(DISFLT);
 
@@ -120,6 +121,7 @@ void IWDG_Init(void) {
 
 void PWMA_Init(void)
 {
+	register PWM_TypeDef *PWMA = PWMA_ADDRESS;
 	gpio_mode_set(P0,GPIO_ModePin_0 | GPIO_ModePin_2 | GPIO_ModePin_4 ,GPIO_Mode_Out_PP);
 	gpio_mode_set(P0,GPIO_ModePin_1  | GPIO_ModePin_3 | GPIO_ModePin_5 ,GPIO_Mode_Out_PP);
 	gpio_mode_set(P0,GPIO_ModePin_0 | GPIO_ModePin_2 | GPIO_ModePin_4 ,GPIO_Mode_Out_FAST);
@@ -128,69 +130,80 @@ void PWMA_Init(void)
 	PWMA_PS = 0x55;
 	PWMA_ENO = 0x00;
 	PWMA_IOAUX = 0x00;
-	PWMA_OISR = 0x00;
+	PWMA->OISR = 0x00;
+	PWMA->CR2 	= 0x00;
 
-	PWMA_ARRH    = PWM_AUTORELOAD >> 8;
-	PWMA_ARRL    = PWM_AUTORELOAD & 0xFF;
+	PWMA->ARRH    = PWM_AUTORELOAD >> 8;
+	PWMA->ARRL    = PWM_AUTORELOAD & 0xFF;
 
-	PWMA_DTR = DEAD_TIME;
+	PWMA->DTR = DEAD_TIME;
 
-	PWMA_CCMR1 = 0x68;
-	PWMA_CCER1 |= 0x05;
+	PWMA->CCER1 = 0x00;
+	PWMA->CCER2 = 0x00;
+	PWMA->CCMR1 = 0x00;
+	PWMA->CCMR2 = 0x00;
+	PWMA->CCMR3 = 0x00;
 
-	PWMA_CCMR2 = 0x68;
-	PWMA_CCER1 |= 0x50;
+	PWMA->CCER1 = 0x55;
+	PWMA->CCER2 = 0x05;
+	PWMA->CCMR1 = 0x68;
+	PWMA->CCMR2 = 0x68;
+	PWMA->CCMR3 = 0x68;
 
-	PWMA_CCMR3 = 0x68;
-	PWMA_CCER2 |= 0x05;
-
-	PWMA_BKR   	= 0x80 | 0x08;
-	PWMA_CR1 	= 0x81; //| 0x20;
-	PWMA_EGR    = 0x01;
-	
+	PWMA->BKR = 0x88;
+	PWMA->CR1 = 0x81; //| 0x20;
+	PWMA->CR2 = 0x01; 
+	PWMA->EGR = 0x01;
+	PWMA_ENO = 0x3F;
 }
 
 void generatePwmTimerEvent(void)
 {	
-	PWMA_EGR = 0x01;
+	register PWM_TypeDef *PWMA = PWMA_ADDRESS;
+	PWMA->EGR = 0x01;
 }
 
 
 void SET_PRESCALER_PWM(uint16_t presc)
 {	
-	PWMA_PSCRH = presc >> 8; 
-	PWMA_PSCRL = presc;
-	PWMA_EGR = 0x01;
+	register PWM_TypeDef *PWMA = PWMA_ADDRESS;
+	PWMA->PSCRH = presc >> 8; 
+	PWMA->PSCRL = presc;
 } 				
 
 void SET_AUTO_RELOAD_PWM(uint16_t relval)
 {
-	PWMA_ARRH = relval >> 8;
-	PWMA_ARRL = relval;
+	register PWM_TypeDef *PWMA = PWMA_ADDRESS;
+	PWMA->ARRH = relval >> 8;
+	PWMA->ARRL = relval;
 }
 
 void SET_DUTY_CYCLE_ALL(uint16_t newdc)
 {
-	PWMA_CCR1H = PWMA_CCR2H = PWMA_CCR3H = newdc >> 8;
-	PWMA_CCR1L = PWMA_CCR2L = PWMA_CCR3L = newdc;
+	register PWM_TypeDef *PWMA = PWMA_ADDRESS;
+	PWMA->CCR1H = PWMA->CCR2H = PWMA->CCR3H = newdc >> 8;
+	PWMA->CCR1L = PWMA->CCR2L = PWMA->CCR3L = newdc;
 }
 
 void setPWMCompare1(uint16_t compareone)
 {
-	PWMA_CCR1H = compareone >> 8;
-	PWMA_CCR1L = compareone;
+	register PWM_TypeDef *PWMA = PWMA_ADDRESS;
+	PWMA->CCR1H = compareone >> 8;
+	PWMA->CCR1L = compareone;
 }
 
 void setPWMCompare2(uint16_t comparetwo)
 {
-	PWMA_CCR2H = comparetwo >> 8;
-	PWMA_CCR2L = comparetwo;
+	register PWM_TypeDef *PWMA = PWMA_ADDRESS;
+	PWMA->CCR2H = comparetwo >> 8;
+	PWMA->CCR2L = comparetwo;
 }
 
 void setPWMCompare3(uint16_t comparethree)
 {
-	PWMA_CCR3H = comparethree >> 8;
-	PWMA_CCR3L = comparethree;
+	register PWM_TypeDef *PWMA = PWMA_ADDRESS;
+	PWMA->CCR3H = comparethree >> 8;
+	PWMA->CCR3L = comparethree;
 }
 
 void TMR0_Init(void)
@@ -246,57 +259,10 @@ void TMR11_Init(void) {
 	T11CR &= 0xfd;			//禁止定时器中断
 }
 
-
-void UN_PWMB_Init(void) {
-
-	gpio_mode_set(INPUT_PIN_PORT,INPUT_MODE_PIN,GPIO_Mode_IN_FLOATING);
-	
-	PWMB_PS = INPUT_PS;
-	PWMB_PSCRH = 0x00;
-	PWMB_PSCRL = 0x00;
-	PWMB_BKR = 0xC0;
-	PWMB_CCER1 = 0x00;
-
-	PWMB_CCMR1 = 0x01;
-	PWMB_CCER1 = 0x01;
-	PWMB_ARRH = 0xFF;
-	PWMB_ARRL = 0xFF;
-	PWMB_IER |= 0x02;
-
-
-	PPWMBH = 1;PPWMB = 0;
-
-	PWMB_EGR = 0x01;
-	PWMB_CR1 |= 0x01;
-}
-
-void ADC_Init(void) {
-
-	gpio_mode_set(P1,GPIO_ModePin_6 | GPIO_ModePin_7,GPIO_Mode_AIN);
-
-	ADC_POWER = 1;            //ADC POWER ON
-	delayMillis(5);           //ADC POWER-UP DELAY
-	RESFMT = 1;               //RESFMT(1):RIGHT-JUSTIFIED
-
-	ADCCFG &= ~0x0f;		//SPEED(0)
-	ADCTIM = 0x38;			//CSSETUP(0), CSHOLD(1), SMPDUTY(24)
-
-	DMA_ADC_RXAH = (uint16_t)adc_dma_buffer >> 8;
-	DMA_ADC_RXAL = (uint16_t)adc_dma_buffer & 0xFF;    //DMA_ADC BUFFER ADDRESS
-
-	DMA_ADC_CFG2 = 0x0D;	//DMA_ADC Transfer 64 times
-
-	DMA_ADC_CHSW0 = VOLTAGE_ADC_CHANNEL | CURRENT_ADC_CHANNEL;	//CH7 CH6
-	DMA_ADC_CHSW1 = 0x00; 
-
-	DMA_ADC_AMT = 0x00;
-	DMA_ADC_AMTH = 0x00;    //设置ADC转换1次
-
-	DMA_ADC_ITVH = 0x00;
-	DMA_ADC_ITVL = 0x00;    //设置ADC速度
-
-	DMA_ADC_CFG = 0x80;       //DMA INTERRUPT ENABLE
-
-	DMA_ADC_CR = 0x80;      //DMA_ADC ENABLE
-
+void EXIT3_Init(void) {
+	gpio_mode_set(P3,GPIO_ModePin_7,GPIO_Mode_Out_FAST);
+	gpio_mode_set(P3,GPIO_ModePin_7,GPIO_Mode_Out_PP);
+	P37 = 1;
+	EX3 = 1;
+	INT3IF = 0;
 }

@@ -8,93 +8,59 @@
 #include "commutate.h"
 
 
-uint8_t servoPwm = 0;
-uint8_t dshot = 0;
-uint8_t ic_timer_prescaler = 0;
-// uint8_t out_put = 0;
+// Flags
+bool servoPwm = 0;
+bool ushot = 0;
+bool inputSet = 0; // 输入设置
+bool brushed_direction_set = 0;
+bool return_to_center = 0;
+uint8_t play_tone_flag;
 
-//detectInput
-uint16_t xdata dma_buffer[64] = { 0 };
+// Timer and buffer
+uint16_t ic_timer_prescaler = 0;
 uint8_t buffersize = 32;
+uint16_t xdata dma_buffer[64] = { 0 };
 uint16_t smallestnumber = 20000;
 uint16_t average_signal_pulse;
-//input and input process
-uint8_t input_ready = 0;
-uint8_t inputSet = 0;					//输入设置
+uint16_t zero_input_counter = 0;
+
+// Input values
 int16_t newinput;
 int16_t adjusted_input;
 int16_t input;
 int16_t last_input;
 int16_t input_override;
+
+// Duty cycle values
 int32_t duty_cycle;
 int32_t adjusted_duty_cycle;
 int32_t last_duty_cycle;
-uint8_t max_duty_cycle_change;
 int32_t prop_brake_duty_cycle;
-uint8_t brushed_direction_set = 0;
-uint8_t return_to_center = 0;
-uint16_t zero_input_counter = 0;
+uint8_t max_duty_cycle_change;
 
-void receiveDshotDma(void) {
-	// out_put = 0;
-
-	PWMB_PSCRH = 0x00;
-	PWMB_PSCRL = ic_timer_prescaler;
-	PWMB_ARRH = 0xFF;
-	PWMB_ARRL = 0xFF;
-
-	PWMB_CCER1 = 0x01;
-
-	PWMB_EGR = 0x01; 
-}
+receiveFUNC_t *receiveDmaBuffer = servoDmaBuffer;
 
 void transfercomplete(void) {
 
-	if (inputSet == 0) {
+	if (!inputSet) {
 		detectInput();
-		receiveDshotDma();
+		receiveDmaBuffer();
 		return;
-	}
-	if (inputSet == 1) {
-
-		// if (dshot_telemetry) {
-		// 	if (out_put) {
-		// 	    make_dshot_package(e_com_time);
-		// 	    computeDshotDMA();
-		// 	    receiveDshotDma();
-		// 	    return;
-		// 	} else {
-		// 	    sendDshotDma();
-		// 	    return;
-		// 	}
-		// } else {
-
-			// if (dshot == 1) {
-			//     computeDshotDMA();
-			//     receiveDshotDma();
-			// }
-			if (servoPwm == 1) {
-				if (getInputPinState()) {
-					buffersize = 3;
-				} else {
-					buffersize = 2;
-					computeServoInput();
-				}
-				receiveDshotDma();
+	} else {
+		if (ushot == 1) {
+			computeUshotDMA();
+			receiveDmaBuffer();
+		}
+		if (servoPwm == 1) {
+			if (getInputPinState()) {
+				buffersize = 3;
+			} else {
+				buffersize = 2;
+				computeServoInput();
 			}
-		// }
+			receiveDmaBuffer();
+		}
 		if (!armed) {
-			// if (dshot && (average_count < 8) && (zero_input_counter > 5)) {
-			// 	average_count++;
-			// 	average_packet_length = average_packet_length
-			// 			+ (dma_buffer[31] - dma_buffer[0]);
-			// 	if (average_count == 8) {
-			// 		dshot_frametime_high = (average_packet_length >> 3)
-			// 				+ (average_packet_length >> 7);
-			// 		dshot_frametime_low = (average_packet_length >> 3)
-			// 				- (average_packet_length >> 7);
-			// 	}
-			// }
 			if (adjusted_input == 0 && calibration_required == 0) { // note this in input..not newinput so it
 																	// will be adjusted be main loop
 				zero_input_counter++;
@@ -106,7 +72,6 @@ void transfercomplete(void) {
 					} else {
 						enter_calibration_counter++;
 					}
-
 					if (enter_calibration_counter > 50 && (!high_calibration_set)) {
 						playBeaconTune3();
 						calibration_required = 1;
@@ -136,22 +101,22 @@ void detectInput(void) {
 	}
 	average_signal_pulse = average_signal_pulse / 32;
 
-	if (dshot == 1) {
-	    // checkDshot();
+	if (ushot == 1) {
+	    checkUshot();
 	}
 	if (servoPwm == 1) {
 		checkServo();
 	}
 
-	if (!dshot && !servoPwm) {
-		// checkDshot();
+	if (!ushot && !servoPwm) {
 		checkServo();
+		checkUshot();
 	}
 }
 
 void setInput(void)	{
 	if (BI_DIRECTION) {
-		if (dshot == 0) {
+		if (ushot == 0) {
 			if (RC_CAR_REVERSE) {
 				if (newinput > (1000 + (servo_dead_band << 1))) {
 					if (forward == DIR_REVERSED) {
@@ -159,7 +124,7 @@ void setInput(void)	{
 						//               if (running) {
 						prop_brake_active = 1;
 						if (return_to_center) {
-							forward = 1 - DIR_REVERSED;
+							forward = ~DIR_REVERSED;
 							prop_brake_active = 0;
 							return_to_center = 0;
 						}
@@ -170,7 +135,7 @@ void setInput(void)	{
 					}
 				}
 				if (newinput < (1000 - (servo_dead_band << 1))) {
-					if (forward == (1 - DIR_REVERSED)) {
+					if (forward == (~DIR_REVERSED)) {
 						adjusted_input = 0;
 						prop_brake_active = 1;
 						if (return_to_center) {
@@ -195,7 +160,7 @@ void setInput(void)	{
 				if (newinput > (1000 + (servo_dead_band << 1))) {
 					if (forward == DIR_REVERSED) {
 						if (((commutation_interval > reverse_speed_threshold) && (duty_cycle < 200)) || stepper_sine) {
-							forward = 1 - DIR_REVERSED;
+							forward = ~DIR_REVERSED;
 							zero_crosses = 0;
 							old_routine = 1;
 							maskPhaseInterrupts();
@@ -207,7 +172,7 @@ void setInput(void)	{
 					adjusted_input = map(newinput,1000 + (servo_dead_band << 1), 2000, 47, 2047);
 				}
 				if (newinput < (1000 - (servo_dead_band << 1))) {
-					if (forward == (1 - DIR_REVERSED)) {
+					if (forward == (~DIR_REVERSED)) {
 						if (((commutation_interval > reverse_speed_threshold) && (duty_cycle < 200)) || stepper_sine) {
 							zero_crosses = 0;
 							old_routine = 1;
@@ -228,12 +193,12 @@ void setInput(void)	{
 			}
 		}
 
-		if (dshot) {
+		if (ushot) {
 			if (newinput > 1047) {
 
 				if (forward == DIR_REVERSED) {
 					if (((commutation_interval > reverse_speed_threshold) && (duty_cycle < 200)) || stepper_sine) {
-						forward = 1 - DIR_REVERSED;
+						forward = ~DIR_REVERSED;
 						zero_crosses = 0;
 						old_routine = 1;
 						maskPhaseInterrupts();
@@ -245,7 +210,7 @@ void setInput(void)	{
 				adjusted_input = ((newinput - 1048) * 2 + 47) - 1;
 			}
 			if (newinput <= 1047 && newinput > 47) {
-				if (forward == (1 - DIR_REVERSED)) {
+				if (forward == (~DIR_REVERSED)) {
 					if (((commutation_interval > reverse_speed_threshold) && (duty_cycle < 200)) || stepper_sine) {
 						zero_crosses = 0;
 						old_routine = 1;
@@ -390,7 +355,7 @@ void setInput(void)	{
 				if (!running) {
 					old_routine = 1;
 					zero_crosses = 0;
-					bad_count = 0;
+					bad_counter = 0;
 					if (BRAKE_ON_STOP) {
 						if (!USE_SIN_START) {
 							prop_brake_duty_cycle = (1980) + DRAG_BRAKE_STRENGTH * 2;
@@ -450,14 +415,12 @@ void setInput(void)	{
 }
 
 void resetInputCaptureTimer(void) {
-	PWMB_PSCRH = 0x00;
-	PWMB_PSCRL = 0x00;
-	PWMB_ARRH = 0xFF;
-	PWMB_ARRL = 0xFF;
-
-	PWMB_CCER1 = 0x01;
-
-	PWMB_EGR = 0x01; 
+	register PWM_TypeDef *PWMB = PWMB_ADDRESS;
+	PWMB->PSCRH = 0x00;
+	PWMB->PSCRL = 0x00;
+	PWMB->IER = 0x04;
+	PWMB->EGR = 0x01; 
+	receiveDmaBuffer = servoDmaBuffer;
 }
 
 // uint8_t getInputPinState(void) {

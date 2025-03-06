@@ -399,6 +399,11 @@
               <FileType>1</FileType>
               <FilePath>.\Mcu\8051u\Src\uart.c</FilePath>
             </File>
+            <File>
+              <FileName>ushot.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\ushot.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
