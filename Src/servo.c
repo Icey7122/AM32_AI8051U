@@ -16,40 +16,6 @@ int16_t last_high_threshold = 0; 				// last high threshold
 int16_t servorawinput; 					// raw servo input
 int16_t max_servo_deviation = 250;	// max deviation between two servo pulses
 
-
-void UN_PWMB_Init(void) {
-	register PWM_TypeDef *PWMB = PWMB_ADDRESS;
-
-	gpio_mode_set(INPUT_PIN_PORT,INPUT_MODE_PIN,GPIO_Mode_IN_FLOATING);
-	
-	PWMB_PS = INPUT_PS;
-	PWMB->PSCRH = 0x00;
-	PWMB->PSCRL = CPU_FREQUENCY_MHZ - 1;
-	PWMB->CCER1 = 0x00;
-	PWMB->CCER2 = 0x00;
-
-
-	PWMB->CCMR1 = 0x01;
-	PWMB->CCMR2 = 0x02;
-	PWMB->CCER1 = 0x31;
-
-	PWMB->ARRH = 0xFF;
-	PWMB->ARRL = 0xFF;
-	PWMB->IER = 0x04;
-
-	PPWMBH = 1;PPWMB = 0;
-
-	PWMB->EGR = 0x01;
-	PWMB->CR1 = 0x01;
-}
-
-void servoDmaBuffer(void) {
-	register PWM_TypeDef *PWMB = PWMB_ADDRESS;
-	PWMB->PSCRH = ic_timer_prescaler >> 8;
-	PWMB->PSCRL = ic_timer_prescaler;
-	PWMB->EGR = 0x01; 
-}
-
 void computeServoInput(void) {
 	if (((dma_buffer[1] - dma_buffer[0]) > 800) && ((dma_buffer[1] - dma_buffer[0]) < 2200)) {
 		signaltimecounter = 0;
@@ -122,6 +88,5 @@ void checkServo(void) {
 		ic_timer_prescaler = CPU_FREQUENCY_MHZ - 1;
 		buffersize = 2;
 		inputSet = 1;
-		receiveDmaBuffer = servoDmaBuffer;
 	}
 }

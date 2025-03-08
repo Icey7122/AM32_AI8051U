@@ -10,16 +10,28 @@
 
 #include "mcu.h"
 
-typedef void(phaseFUNC_t)(void);
+typedef void(STEP_FUNC_t)(void);
 
-extern phaseFUNC_t* comStep[6];
+extern STEP_FUNC_t* comStep[6];
 
-extern void phaseAB(void);
-extern void phaseCB(void);
-extern void phaseCA(void);
-extern void phaseBA(void);
-extern void phaseBC(void);
-extern void phaseAC(void);
+void phaseAPWM(void);
+void phaseAFLOAT(void);
+void phaseALOW(void);
+
+void phaseBPWM(void);
+void phaseBFLOAT(void);
+void phaseBLOW(void);
+
+void phaseCPWM(void);
+void phaseCFLOAT(void);
+void phaseCLOW(void);
+
+extern void STEP_AB(void);
+extern void STEP_CB(void);
+extern void STEP_CA(void);
+extern void STEP_BA(void);
+extern void STEP_BC(void);
+extern void STEP_AC(void);
 
 
 extern void allOff(void);

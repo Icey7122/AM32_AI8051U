@@ -17,7 +17,7 @@
 
 #define FILE_NAME 					"AM32REF_8051U"
 #define FIRMWARE_NAME 				"AM32 Ref-ESC"
-#define DEAD_TIME 					35
+#define DEAD_TIME 					30
 #define HARDWARE_GROUP_P11
 #define MILLIVOLT_PER_AMP 			100
 #define CURRENT_OFFSET 				2
@@ -27,7 +27,7 @@
 #define CURRENT_ADC_CHANNEL			1 << 6
 #define CURRENT_ADC_PIN 			1 //P1.6
 #define USE_SERIAL_TELEMETRY
-#define BAUD_RATE 500000
+#define BAUD_RATE 115200
 #define TARGET_STALL_PROTECTION_INTERVAL 9000
 
 #endif
@@ -144,8 +144,7 @@
 
 #endif
 
-#define NVIC_SystemReset() 	while (1)
-
+#define NVIC_SystemReset() 	IAP_CONTR = 0x20
 
 #ifndef LOOP_FREQUENCY_HZ
 #define LOOP_FREQUENCY_HZ 20000

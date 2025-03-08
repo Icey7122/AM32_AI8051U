@@ -14,7 +14,6 @@ void playChangedTone(void);
 
 void setVolume(uint8_t volume);
 
-extern uint8_t beep_volume;
-
+extern void delayMillis(uint32_t millis);
 
 #endif /* SOUNDS_H_ */
