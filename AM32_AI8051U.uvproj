@@ -262,7 +262,7 @@
             <uAlias>1</uAlias>
             <uRentF>1</uRentF>
             <uUch>0</uUch>
-            <uFlt64>1</uFlt64>
+            <uFlt64>0</uFlt64>
             <Fuzzy>3</Fuzzy>
             <Optim>7</Optim>
             <wLevel>3</wLevel>
