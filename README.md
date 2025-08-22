@@ -1,4 +1,3 @@
-# FOR HDU
 # 80251 ESC Base on AI8051U
 
 * [AM32](https://github.com/am32-firmware/AM32)<br>
@@ -112,6 +111,9 @@ The version I ported is V2.16, which supports signals such as dshot300, dshot600
 ## Reference
 * [AM32](https://github.com/am32-firmware/AM32)
 * [RISC-V AM32](https://github.com/TianpeiLee/AM32)
+
+## Thanks
+* HDU students have discovered some porting bugs, these bugs caused the ESC to be slow to respond.
 
 
 
