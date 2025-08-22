@@ -3,6 +3,7 @@
 
 #include "STC8051U.H"
 #include "intrins.h"
+#include "nstdbool.h"
 #include "nstdint.h"
 
 #ifndef __VSCODE_C251__
@@ -191,21 +192,6 @@
 #define gpio_clear(port,pin) 			pin = 0
 #define gpio_read(port,pin) 			pin
 
-typedef union 
-{
-	int8_t i8[2];
-	uint8_t u8[2];
-	int16_t i16;
-	uint16_t u16;	
-} union_int16_t;
-
-extern union_int16_t union_16_T0;
-extern union_int16_t union_16_T1;
-extern union_int16_t union_16_T2;
-extern union_int16_t union_16_T3;
-extern union_int16_t union_16_T4;
-extern union_int16_t union_16_T11;
-
 #define TMR0_VALUE() (union_16_T0.u8[0] = TH0,union_16_T0.u8[1] = TL0,union_16_T0.u16)
 #define TMR1_VALUE() (union_16_T1.u8[0] = TH1,union_16_T1.u8[1] = TL1,union_16_T1.u16)
 #define TMR2_VALUE() (union_16_T2.u8[0] = T2H,union_16_T2.u8[1] = T2L,union_16_T2.u16)
@@ -219,6 +205,75 @@ extern union_int16_t union_16_T11;
 #define TMR3_SET(time)		(T3H = (uint16_t)time >> 8,T3L = time)
 #define TMR4_SET(time)		(T4H = (uint16_t)time >> 8,T4L = time)
 #define TMR11_SET(time)		(T11H = (uint16_t)time >> 8,T11L = time)
+
+typedef struct {
+    unsigned char CR1;
+    unsigned char CR2;
+    unsigned char SMCR;
+    unsigned char ETR;
+    unsigned char IER;
+    unsigned char SR1;
+    unsigned char SR2;
+    unsigned char EGR;
+    unsigned char CCMR1;
+    unsigned char CCMR2;
+    unsigned char CCMR3;
+    unsigned char CCMR4;
+    unsigned char CCER1;
+    unsigned char CCER2;
+    unsigned char CNTRH;
+    unsigned char CNTRL;
+    unsigned char PSCRH;
+    unsigned char PSCRL;
+    unsigned char ARRH;
+    unsigned char ARRL;
+    unsigned char RCR;
+    unsigned char CCR1H;
+    unsigned char CCR1L;
+    unsigned char CCR2H;
+    unsigned char CCR2L;
+    unsigned char CCR3H;
+    unsigned char CCR3L;
+    unsigned char CCR4H;
+    unsigned char CCR4L;
+    unsigned char BKR;
+    unsigned char DTR;
+    unsigned char OISR;
+} PWM_TypeDef;
+
+typedef union 
+{
+    float Flt;
+    uint8_t u8[4];
+} union_float_t;
+
+typedef union 
+{
+	int8_t i8[2];
+	uint8_t u8[2];
+	int16_t i16;
+	uint16_t u16;	
+} union_int16_t;
+
+typedef union 
+{
+	int8_t i8[4];
+	uint8_t u8[4];
+	int16_t i16[2];
+	uint16_t u16[2];	
+    int32_t i32;
+    uint32_t u32;
+} union_int32_t;
+
+extern union_int16_t union_16_T0;
+extern union_int16_t union_16_T1;
+extern union_int16_t union_16_T2;
+extern union_int16_t union_16_T3;
+extern union_int16_t union_16_T4;
+extern union_int16_t union_16_T11;
+
+extern PWM_TypeDef *PWMA_ADDRESS;
+extern PWM_TypeDef *PWMB_ADDRESS;
 
 extern void TMR0_RELOAD(uint16_t time);
 extern void TMR1_RELOAD(uint16_t time);

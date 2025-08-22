@@ -345,9 +345,9 @@
               <FilePath>.\Src\sounds.c</FilePath>
             </File>
             <File>
-              <FileName>serial_telemetry.c</FileName>
+              <FileName>kiss_telemetry.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Src\serial_telemetry.c</FilePath>
+              <FilePath>.\Src\kiss_telemetry.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -398,6 +398,11 @@
               <FileName>uart.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Mcu\8051u\Src\uart.c</FilePath>
+            </File>
+            <File>
+              <FileName>ushot.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\ushot.c</FilePath>
             </File>
           </Files>
         </Group>

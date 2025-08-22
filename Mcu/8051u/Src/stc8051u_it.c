@@ -12,10 +12,9 @@
 #include "phaseouts.h"
 #include "commutate.h"
 #include "peripherals.h"
-#include "serial_telemetry.h"
+#include "kiss_telemetry.h"
 
-uint8_t interrupt_time = 0;
-
+uint8_t ic_interrupt_counter = 0;
 
 void CMP_IRQHandler(void)
 {
@@ -25,7 +24,7 @@ void CMP_IRQHandler(void)
 
 void TWENTY_KHZ_IRQHandler(void)
 {	
-	TwentyKhzRoutine();
+	tenKhzRoutine();
 }
 
 void COM_TIMER_IRQHandler(void)
@@ -35,26 +34,33 @@ void COM_TIMER_IRQHandler(void)
 
 void IC_IRQHandler(void)
 {
-    dma_buffer[interrupt_time++] = ((uint16_t)PWMB_CCR5H << 8 | PWMB_CCR5L);
+	register PWM_TypeDef *PWMB = PWMB_ADDRESS;
+	register union_int32_t *buffer = (union_int32_t *)dma_buffer + ic_interrupt_counter;
 
-	if (interrupt_time == buffersize / 2) {
-		if(servoPwm){
-            PWMB_CCER1 = 0x03;
-		}
-    }
+    buffer->u8[0] = PWMB->CCR1H;
+    buffer->u8[1] = PWMB->CCR1L;
+	buffer->u8[2] = PWMB->CCR2H;
+	buffer->u8[3] = PWMB->CCR2L;
+	ic_interrupt_counter++;
 	
-	if (interrupt_time == buffersize) {
+	if (ic_interrupt_counter == buffersize >> 1) {
 		transfercomplete();
-		input_ready = 1;
-        interrupt_time = 0;
+		ic_interrupt_counter = 0;
+		INT3IF = 1;
     }
+	PWMB->SR1 &= ~0x04;
 }
 
-
-void ADC_DMA_IRQHandler(void)
+void IC_UART_IRQHandler(void)
 {
-	ADC_DMA_Callback();
-	DMA_ADC_STA = 0x00;
+	transfercomplete();
+	INT3IF = 1;
+	DMA_UR1R_STA = 0x00;
+}
+
+void EXIT_IRQHandler(void)
+{
+	setInput();
 }
 
 void UART1_DMA_IRQHandler(void)

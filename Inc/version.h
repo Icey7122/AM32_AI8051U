@@ -9,6 +9,8 @@
 #define INC_VERSION_H_
 
 #define VERSION_MAJOR 2
-#define VERSION_MINOR 16
+#define VERSION_MINOR 18
+
+#define EEPROM_VERSION 2
 
 #endif /* INC_VERSION_H_ */

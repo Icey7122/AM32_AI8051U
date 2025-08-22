@@ -10,11 +10,12 @@
 
 #include "mcu.h"
 
-#define INTERVAL_TIMER_COUNT 					TMR1_VALUE()
+#define COM_TIMER_COUNT(value) 					TMR0_RELOAD(value)
+#define INTERVAL_TIMER_COUNT() 					TMR1_VALUE()
 #define RELOAD_WATCHDOG_COUNTER() 				(CLR_WDT = 1)
-#define DISABLE_COM_TIMER_INT() 				(TR0 = 0)
-#define ENABLE_COM_TIMER_INT() 					(TR0 = 1)
-#define SET_AND_ENABLE_COM_INT(time) 			(TR0 = 0,TMR0_RELOAD(time),TR0 = 1)			//使能定时器0中断
+#define DISABLE_COM_TIMER_INT() 				(ET0 = 0)
+#define ENABLE_COM_TIMER_INT() 					(ET0 = 1)
+#define SET_AND_ENABLE_COM_INT(time) 			(TMR0_RELOAD(time),ET0 = 1)			//使能定时器0中断
 #define SET_INTERVAL_TIMER_COUNT(intertime) 	TMR1_SET(intertime)
 
 extern void SET_PRESCALER_PWM(uint16_t presc);
@@ -40,8 +41,7 @@ extern void TMR1_Init(void);
 extern void TMR3_Init(void);
 extern void TMR4_Init(void);
 extern void TMR11_Init(void);
-extern void UN_PWMB_Init(void);
-extern void ADC_Init(void);
+extern void EXIT3_Init(void);
 
 
 #endif /* INC_PERIPHERALS_H_ */

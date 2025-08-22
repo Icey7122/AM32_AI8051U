@@ -5,8 +5,11 @@
 #include "phaseouts.h"
 #include "peripherals.h"
 
-uint8_t beep_volume = 5;
+#ifndef ERASED_FLASH_BYTE
+#define ERASED_FLASH_BYTE  0xFF
+#endif
 
+uint8_t beep_volume;
 void pause(uint16_t ms) {
 	SET_DUTY_CYCLE_ALL(0);
 	delayMillis(ms);
@@ -49,21 +52,21 @@ void playBlueJayTune(void) {
 	uint16_t frequency;
 	(*comStep[2])();
 	// read_flash_bin(blueJayTuneBuffer , eeprom_address + 48 , 128);
-	for (i = 52; i < 176; i += 2) {
+	for (i = 4; i < 128; i += 2) {
 		RELOAD_WATCHDOG_COUNTER();
-		signaltimecounter = 0;
+		signaltimeout = 0;
 
-		if (eepromBuffer[i] == 255) {
+		if (eepromBuffer.eeppack.tune[i] == 255) {
 			full_time_count++;
 
 		} else {
-			if (eepromBuffer[i + 1] == 0) {
-				duration = full_time_count * 254 + eepromBuffer[i];
+			if (eepromBuffer.eeppack.tune[i + 1] == 0) {
+				duration = full_time_count * 254 + eepromBuffer.eeppack.tune[i];
 				SET_DUTY_CYCLE_ALL(0);
 				delayMillis(duration);
 			} else {
-				frequency = getBlueJayNoteFrequency(eepromBuffer[i + 1]);
-				duration = ((full_time_count * 254 + eepromBuffer[i])
+				frequency = getBlueJayNoteFrequency(eepromBuffer.eeppack.tune[i + 1]);
+				duration = ((full_time_count * 254 + eepromBuffer.eeppack.tune[i])
 						* (100000 / frequency)) / 100;
 				playBJNote(frequency, duration);
 			}
@@ -73,14 +76,13 @@ void playBlueJayTune(void) {
 	allOff(); // turn all channels low again
 	SET_PRESCALER_PWM(0); // set prescaler back to 0.
 	SET_AUTO_RELOAD_PWM(PWM_MAX_ARR);
-	signaltimecounter = 0;
+	signaltimeout = 0;
 	RELOAD_WATCHDOG_COUNTER();
 }
 
 void playStartupTune(void) {
-	uint8_t value = *(unsigned char far*)(eeprom_address + 48);
 	__disable_irq();
-	if (value != 0xFF) {
+	if (eepromBuffer.eeppack.tune[0] != ERASED_FLASH_BYTE) {
 		playBlueJayTune();
 	} else {
 		SET_AUTO_RELOAD_PWM(PWM_AUTORELOAD);
@@ -99,7 +101,7 @@ void playStartupTune(void) {
 
 		allOff(); // turn all channels low again
 		SET_PRESCALER_PWM(0); // set prescaler back to 0.
-		signaltimecounter = 0;
+		signaltimeout = 0;
 	}
 
 	SET_AUTO_RELOAD_PWM(PWM_MAX_ARR);
@@ -124,7 +126,7 @@ void playBrushedStartupTune(void) {
 	delayMillis(300);
 	allOff(); // turn all channels low again
 	SET_PRESCALER_PWM(0); // set prescaler back to 0.
-	signaltimecounter = 0;
+	signaltimeout = 0;
 	SET_AUTO_RELOAD_PWM(PWM_MAX_ARR);
 	__enable_irq();
 }
@@ -169,7 +171,7 @@ void playInputTune2(void) {
 	delayMillis(75);
 	allOff();
 	SET_PRESCALER_PWM(0);
-	signaltimecounter = 0;
+	signaltimeout = 0;
 	SET_AUTO_RELOAD_PWM(PWM_MAX_ARR);
 	__enable_irq();
 }
@@ -188,7 +190,7 @@ void playInputTune(void) {
 	delayMillis(100);
 	allOff();
 	SET_PRESCALER_PWM(0);
-	signaltimecounter = 0;
+	signaltimeout = 0;
 	SET_AUTO_RELOAD_PWM(PWM_MAX_ARR);
 	__enable_irq();
 }
@@ -204,7 +206,7 @@ void playDefaultTone(void) {
 	delayMillis(150);
 	allOff();
 	SET_PRESCALER_PWM(0);
-	signaltimecounter = 0;
+	signaltimeout = 0;
 	SET_AUTO_RELOAD_PWM(PWM_MAX_ARR);
 }
 
@@ -219,7 +221,7 @@ void playChangedTone(void) {
 	delayMillis(150);
 	allOff();
 	SET_PRESCALER_PWM(0);
-	signaltimecounter = 0;
+	signaltimeout = 0;
 	SET_AUTO_RELOAD_PWM(PWM_MAX_ARR);
 }
 
@@ -236,7 +238,7 @@ void playBeaconTune3(void) {
 	}
 	allOff();
 	SET_PRESCALER_PWM(0);
-	signaltimecounter = 0;
+	signaltimeout = 0;
 	SET_AUTO_RELOAD_PWM(PWM_MAX_ARR);
 	__enable_irq();
 }
